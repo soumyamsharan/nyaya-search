@@ -19,23 +19,23 @@ The website SHALL be reachable at one stable HTTPS address that does not change 
 - **WHEN** a visitor requests the site or API over plain HTTP
 - **THEN** they are redirected to HTTPS
 
-### Requirement: Always on, no cold start
-The site SHALL stay running without the developer's machine, and SHALL NOT sleep or spin down when idle; the first search after a period with no visitors SHALL meet the same latency target as any other search.
+### Requirement: Runs without the developer's machine, on free hosting
+The site SHALL stay available without the developer's machine, on hosting that costs nothing. Because the free API host may put the service to sleep after a long idle period (about 48 hours), a visit to a sleeping service SHALL wake it, and the website SHALL tell the visitor the service is waking up and to retry shortly, rather than showing a raw error.
 
 #### Scenario: First visit after days of no traffic
 - **WHEN** nobody has used the site for several days and a visitor runs a search
-- **THEN** results arrive within the normal search latency target
+- **THEN** the website says the service is waking up, and searches work normally once it has started
 
 #### Scenario: Developer laptop off
 - **WHEN** the developer's Mac is switched off
 - **THEN** the site keeps working
 
 ### Requirement: Only the web entry points are exposed
-From the internet, only HTTPS on the website and API hostnames SHALL be reachable; the database and internal service ports SHALL NOT be reachable, and server administration SHALL require key-based SSH.
+From the internet, only HTTPS on the website and API hostnames SHALL be reachable; the database and internal service ports SHALL NOT be reachable (the database listens only inside the API container), and any server administration SHALL require key-based authentication.
 
 #### Scenario: Port scan
-- **WHEN** someone probes the server's public address
-- **THEN** only ports 80/443 (and key-only SSH) answer, and the database port does not
+- **WHEN** someone probes the API's public address
+- **THEN** only HTTPS answers, and the database is not reachable
 
 ### Requirement: Secrets stay on the server
 API keys and database credentials SHALL exist only in server-side configuration and SHALL NOT appear in the browser bundle, page source, API responses or the source repository.

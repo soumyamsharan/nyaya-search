@@ -177,6 +177,22 @@ Monitor: UptimeRobot (free) on /healthz every 5 min → email alert
 - **Idle reclaim:** Oracle can reclaim Always Free servers that sit idle, and a demo with little traffic looks idle. Mitigation: upgrade the account to Pay-As-You-Go (Always Free resources stay free), confirmed against Oracle's current terms at sign-up. Set a ₹0 budget alert.
 - **Fallback:** if no A1 capacity is available by the end of day 1, run the same Compose file on a Hetzner CAX21 (Arm64, 4 vCPU, 8 GB). Only the IP behind the DuckDNS name changes.
 
+### 14. Free deployment target: Hugging Face Space (chosen over Oracle)
+- **Why:** the hosting must cost ₹0, and Oracle sign-up and capacity were blocking. A free Hugging Face Docker Space has 2 vCPU and 16 GB RAM, HTTPS on `https://<user>-nyaya-search-api.hf.space`, and needs no card. The Oracle/Caddy setup (Decision 12) stays in the repo as the always-on alternative.
+- **One container** (`deploy/hf-space/Dockerfile`), because Spaces run a single container:
+  - ParadeDB with Python 3.12 copied from the official image.
+  - Postgres listens only on 127.0.0.1 inside the container, with trust auth on localhost.
+  - The API listens on port 7860, behind Hugging Face's HTTPS proxy.
+- **Baked in at build time:**
+  - The models, with the reranker exported to int8 ONNX.
+  - The database, restored from a dump published as a public dataset repo (`<user>/nyaya-search-db`; all of it is public CC-BY data).
+  - Postgres uses file-backed shared memory (`dynamic_shared_memory_type = mmap`), because container `/dev/shm` is too small for HNSW builds.
+- **No persistent disk on the free tier:** runtime writes (breakdown cache, LLM call log, daily cap counter) reset when the Space restarts. Search and reading are unaffected.
+- **CPU budget:** measured with 2 threads, int8 ONNX reranking of 10 candidates at 192 tokens takes about 1.3 s on the dev Mac (about 3.5 s for 20 at 256), and int8 scores match full precision closely (r = 0.986, same top 4). Hence `RERANK_DEPTH=10`, `RERANK_MAX_TOKENS=192`, both overridable as Space variables.
+- **Sleep:** the Space sleeps after about 48 idle hours; the next visit wakes it in a few minutes. The website's "unreachable" message says the service may be waking up.
+- **Secrets and settings:** the Groq key is a Space secret (`LLM_API_KEY`), entered by the owner in the Space settings. `DB_DUMP_URL`, `LLM_MODEL`, `LLM_DAILY_CAP` and `ALLOWED_ORIGINS` are Space variables, which reach the build as build args.
+- **Publishing:** `scripts/publish_hf.py db|space`, using the owner's `hf auth login` token on their machine.
+
 ### 13. Evaluation
 - **Query set:** `evals/queries.yaml` holds ≥ 20 hand-written fact-pattern queries with expected judgment ids and an `author` field.
 - **Runner:** the runner calls the four `Retriever` setups, writes `evals/results/<timestamp>.json` and prints the table. It exits non-zero when hybrid+rerank recall@10 is below BM25.

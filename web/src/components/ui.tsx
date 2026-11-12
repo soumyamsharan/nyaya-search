@@ -15,7 +15,7 @@ export function Notice({ tone = "info", children }: { tone?: keyof typeof TONES;
 }
 
 const ERROR_TEXT: Partial<Record<ApiError["kind"], string>> = {
-  unreachable: "The service is temporarily unavailable. Please try again in a little while.",
+  unreachable: "The service is waking up or temporarily unavailable. Please try again in a minute or two.",
   busy: "AI features are busy right now. Please try again later — search and reading still work.",
   unavailable: "This AI feature is temporarily unavailable. The judgment text below is unaffected.",
   rate_limited: "Too many requests. Please wait a minute and try again.",

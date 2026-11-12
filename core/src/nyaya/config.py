@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     candidate_limit: int = 100
 
     # API
+    port: int = 8000
     allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:3000"])
     rate_limit: str = "30/minute"
     trusted_proxy_ips: str = "127.0.0.1"

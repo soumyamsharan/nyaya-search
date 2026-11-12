@@ -64,7 +64,7 @@ def run() -> None:
     uvicorn.run(
         create_app(settings),
         host="0.0.0.0",  # noqa: S104 - inside a container; only the reverse proxy can reach it
-        port=8000,
+        port=settings.port,
         access_log=False,  # uvicorn's access log would include query strings
         proxy_headers=True,
         forwarded_allow_ips=settings.trusted_proxy_ips,
