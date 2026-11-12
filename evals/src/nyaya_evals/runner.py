@@ -85,7 +85,9 @@ class HttpBackend:
 
 
 def load_queries(path: Path) -> list[EvalQuery]:
-    return [EvalQuery(**item) for item in yaml.safe_load(path.read_text())["queries"]]
+    items = yaml.safe_load(path.read_text())["queries"]
+    # YAML reads unquoted ids like 2024_10_108_125 as numbers (underscores are digit separators): coerce to text.
+    return [EvalQuery(**{**item, "expected": [str(j) for j in item["expected"]]}) for item in items]
 
 
 def percentile(values: list[float], pct: float) -> float:

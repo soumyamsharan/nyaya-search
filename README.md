@@ -132,8 +132,10 @@ daily cap, and re-ingestion determinism. The latency check (p95 search under 3 s
 
 ## Evaluation
 
-`evals/queries.yaml` holds 21 fact-pattern queries, drafted from the reporters' issue statements. An advocate should
-review them before the numbers are quoted.
+`evals/queries.yaml` holds 22 fact-pattern queries, one of which is a deliberate invalid entry that the runner must
+exclude, leaving 21. The queries were drafted from the reporters' issue statements, so expected judgments reflect one
+reader's judgment, and an advocate should review them before the numbers are quoted. One query is worth about 5
+percentage points of recall, so these differences are small.
 
 ```bash
 uv run evals                      # recall@10, MRR and p95 for bm25, vector, hybrid, hybrid_rerank
@@ -142,12 +144,18 @@ uv run evals --api-url https://soumyamsharan-nyaya-search-api.hf.space   # again
 
 | Search setup | Recall@10 | MRR | p95 latency |
 |---|---|---|---|
-| Keyword (BM25) | _not yet measured_ | | |
-| Semantic (BGE-M3) | _not yet measured_ | | |
-| Hybrid | _not yet measured_ | | |
-| Hybrid + reranker | _not yet measured_ | | |
+Measured on 21 valid queries (local services, reranker at depth 50 and 512 tokens; the live backend uses depth 5 at 128 tokens):
 
-The runner exits with an error if hybrid + reranker scores below keyword search. Results are saved to `evals/results/`.
+| Search setup | Recall@10 | MRR | p95 latency (local) |
+|---|---|---|---|
+| Keyword (BM25) | 0.952 | 0.865 | 45 ms |
+| Semantic (BGE-M3) | 0.905 | 0.683 | 153 ms |
+| Hybrid (BM25 + semantic) | **1.000** | 0.786 | 95 ms |
+| Hybrid + reranker | 0.905 | 0.699 | 3,902 ms |
+
+The runner exits with an error if hybrid + reranker scores below keyword search, and this run did: the gate **failed**.
+Hybrid alone finds every expected judgment, while the reranker drops two queries that hybrid found. Results are saved
+to `evals/results/`.
 
 Quality checks done so far: paragraph role labels were spot-checked on 40 random paragraphs per round (about 72%
 correct; facts, reasoning and conclusions are most reliable); the int8 reranker keeps scores correlated at 0.986
