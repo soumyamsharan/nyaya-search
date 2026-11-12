@@ -185,6 +185,21 @@ class _Term:
     excluded: bool
 
 
+# British and American spellings used in Indian judgments (normalisation / normalization). Variants are added to the
+# words used for ranking only; phrases, AND and NOT terms are matched exactly as typed.
+_SPELLING_PAIRS = (("isation", "ization"), ("ised", "ized"), ("ising", "izing"), ("ise", "ize"), ("yse", "yze"))
+
+
+def spelling_variants(word: str) -> list[str]:
+    lower = word.lower()
+    for british, american in _SPELLING_PAIRS:
+        if lower.endswith(british) and len(lower) > len(british) + 2:
+            return [lower[: -len(british)] + american]
+        if lower.endswith(american) and len(lower) > len(american) + 2:
+            return [lower[: -len(american)] + british]
+    return []
+
+
 def parse_query(raw: str) -> ParsedQuery:
     """Parse quoted phrases and the upper-case operators AND, OR, NOT.
 
@@ -207,9 +222,11 @@ def parse_query(raw: str) -> ParsedQuery:
         terms.append(_Term(text, is_phrase, required=is_phrase or pending_and, excluded=pending_not))
         pending_and = pending_not = False
     kept = [t for t in terms if not t.excluded]
+    ranking_words = [t.text for t in kept if not t.phrase]
+    variants = [v for t in kept if not t.phrase and not t.required for v in spelling_variants(t.text)]
     return ParsedQuery(
         raw=raw,
-        free_text=" ".join(t.text for t in kept if not t.phrase),
+        free_text=" ".join([*ranking_words, *dict.fromkeys(variants)]),
         phrases=[t.text for t in kept if t.phrase],
         required=[t.text for t in kept if t.required],
         excluded=[t.text for t in terms if t.excluded],

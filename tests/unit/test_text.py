@@ -118,3 +118,15 @@ def test_only_excluded_terms_is_empty():
 )
 def test_high_court_delhi_law_times_and_english_reports(text, norm):
     assert normalize_citation(text) == norm
+
+
+def test_ranking_words_get_british_and_american_spellings():
+    assert "normalization" in parse_query("normalisation of marks").free_text
+    assert "normalisation" in parse_query("normalization of marks").free_text
+
+
+def test_spelling_variants_never_touch_phrases_or_required_terms():
+    phrase = parse_query('"normalisation of marks" exam')
+    assert phrase.phrases == ["normalisation of marks"] and "normalization" not in phrase.free_text
+    required = parse_query("normalisation AND marks")
+    assert required.required == ["normalisation", "marks"] and "normalization" not in required.free_text
