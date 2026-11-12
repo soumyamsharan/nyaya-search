@@ -33,3 +33,28 @@ def test_paragraph_carries_statute_links(client, db):
     row = db.fetch_one("SELECT judgment_id FROM judgment_acts WHERE section = '138' LIMIT 1")
     paragraphs = client.get(f"/v1/judgments/{row['judgment_id']}").json()["paragraphs"]
     assert any(p["statutes"] for p in paragraphs)
+
+
+def test_section_provision_lists_referring_and_related_judgments(client):
+    page = client.get("/v1/provisions/section/negotiable-instruments-act/138")
+    assert page.status_code == 200, page.text
+    body = page.json()
+    assert body["judgments_total"] > 0 and body["judgments"]
+    assert body["official_url"].startswith("https://indiacode.gov.in/search?query=")
+    referring = {entry["judgment"]["id"] for entry in body["judgments"]}
+    assert len(body["related"]) <= 8
+    assert not any(r["judgment"]["id"] in referring for r in body["related"])
+
+
+def test_article_provision_resolves(client):
+    response = client.get("/v1/provisions/article/constitution-of-india/21")
+    assert response.status_code == 200 and response.json()["judgments_total"] > 0
+
+
+def test_unknown_provision_is_404(client):
+    response = client.get("/v1/provisions/section/penal-code/9999")
+    assert response.status_code == 404 and response.json()["error"]["code"] == "not_found"
+
+
+def test_unknown_provision_kind_is_rejected(client):
+    assert client.get("/v1/provisions/chapter/penal-code/1").status_code == 422

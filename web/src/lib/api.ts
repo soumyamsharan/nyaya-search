@@ -12,6 +12,8 @@ import type {
   NoteRenewed,
   SharedNote,
   StatuteSectionPage,
+  Provision,
+  ProvisionKind,
 } from "./types";
 
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -81,6 +83,8 @@ export const api = {
   statuteAct: (key: string, page: number) => request<StatuteActPage>(`/v1/statutes/${enc(key)}?page=${page}`),
   statuteSection: (key: string, section: string) =>
     request<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`),
+  provision: (kind: ProvisionKind, key: string, slug: string) =>
+    request<Provision>(`/v1/provisions/${kind}/${enc(key)}/${enc(slug)}`),
   judgment: (id: string) => request<Judgment>(`/v1/judgments/${enc(id)}`),
   breakdown: (id: string) => request<Breakdown>(`/v1/judgments/${enc(id)}/breakdown`),
   citations: (id: string) => request<CitationGraph>(`/v1/judgments/${enc(id)}/citations`),

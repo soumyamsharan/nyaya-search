@@ -85,6 +85,13 @@ def vocabulary_stage() -> None:
     _finish(db, stages.vocabulary(db))
 
 
+@app.command(name="statute-refs")
+def statute_refs_stage() -> None:
+    """Rebuild the table of statute references (Acts, Constitution articles, rules, regulations, notifications)."""
+    db = _db()
+    _finish(db, stages.statute_refs(db))
+
+
 @app.command(name="all")
 def run_all(year: Years = None) -> None:
     """migrate -> sync -> extract -> roles -> vocabulary -> index -> citations."""
@@ -95,3 +102,4 @@ def run_all(year: Years = None) -> None:
     vocabulary_stage()
     index()
     citations()
+    statute_refs_stage()

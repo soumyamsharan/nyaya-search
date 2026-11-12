@@ -49,12 +49,14 @@ class CitationRef(BaseModel):
 
 
 class StatuteRef(BaseModel):
-    """A section of an Act mentioned in a paragraph, linked to its statute page."""
+    """A statute provision mentioned in a paragraph (section, article, rule, regulation or notification)."""
 
     raw: str
+    kind: str
     key: str
     name: str
-    section: str
+    number: str
+    slug: str
 
 
 class Paragraph(ParagraphRef):
@@ -254,3 +256,30 @@ class StatuteActPage(BaseModel):
     page: int
     per_page: int
     judgments: list[ActJudgment]
+
+
+class ProvisionJudgment(BaseModel):
+    judgment: JudgmentSummary
+    paragraphs: list[StatuteParagraph]
+
+
+class RelatedParagraph(BaseModel):
+    judgment: JudgmentSummary
+    label: str
+    text: str
+
+
+class Provision(BaseModel):
+    kind: str
+    key: str
+    name: str
+    number: str
+    judgments_total: int
+    judgments: list[ProvisionJudgment]
+    related: list[RelatedParagraph] = Field(
+        default_factory=list, description="Other judgments that discuss this provision, nearest in meaning first"
+    )
+    official_url: str
+    description: str | None = None
+    reviewed_by: str | None = None
+    reviewed_on: str | None = None

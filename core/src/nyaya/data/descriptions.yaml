@@ -1,0 +1,32 @@
+# Plain-language descriptions of statutes, shown only after a named reviewer has checked them against the official text.
+# Until `reviewed_by` and `reviewed_on` are filled in, the description is NOT shown on the site.
+# Key: the statute key used in the URL (for example negotiable-instruments-act, constitution-of-india).
+statutes:
+  constitution-of-india:
+    description: null  # TODO: draft pending review
+    reviewed_by: null
+    reviewed_on: null
+  negotiable-instruments-act:
+    description: null
+    reviewed_by: null
+    reviewed_on: null
+  penal-code:
+    description: null
+    reviewed_by: null
+    reviewed_on: null
+  evidence-act:
+    description: null
+    reviewed_by: null
+    reviewed_on: null
+  code-of-civil-procedure:
+    description: null
+    reviewed_by: null
+    reviewed_on: null
+  code-of-criminal-procedure:
+    description: null
+    reviewed_by: null
+    reviewed_on: null
+  limitation-act:
+    description: null
+    reviewed_by: null
+    reviewed_on: null

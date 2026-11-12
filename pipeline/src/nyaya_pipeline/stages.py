@@ -367,3 +367,28 @@ def vocabulary(db: Database) -> RunReport:
         )
         report.counts["processed"] = conn.execute("SELECT count(*) AS n FROM vocabulary").fetchone()["n"]
     return report
+
+
+def statute_refs(db: Database) -> RunReport:
+    """Rebuild the statute reference table from every paragraph (all kinds)."""
+    from nyaya.statute_refs import find_all_statute_refs
+
+    report = RunReport("statute-refs")
+    rows = []
+    for p in db.fetch_all(
+        """SELECT p.judgment_id, p.seq, p.text FROM paragraphs p JOIN judgments j ON j.id = p.judgment_id
+           WHERE j.status = 'ok'"""
+    ):
+        for m in find_all_statute_refs(p["text"]):
+            rows.append((p["judgment_id"], p["seq"], m.kind, m.key, m.name, m.number, m.slug, m.raw))
+            report.counts[m.kind] += 1
+        report.counts["processed"] += 1
+    with db.connection() as conn, conn.transaction():
+        conn.execute("DELETE FROM statute_refs")
+        with conn.cursor() as cur:
+            cur.executemany(
+                """INSERT INTO statute_refs (judgment_id, seq, kind, key, name, number, slug, raw)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                rows,
+            )
+    return report

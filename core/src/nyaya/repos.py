@@ -17,6 +17,9 @@ from nyaya.domain import (
     JudgmentSummary,
     Paragraph,
     ParagraphRef,
+    Provision,
+    ProvisionJudgment,
+    RelatedParagraph,
     SectionCount,
     StatuteActPage,
     StatuteIndex,
@@ -28,7 +31,7 @@ from nyaya.domain import (
     UnresolvedCitation,
 )
 from nyaya.parsing.scr import SECTION_TITLES
-from nyaya.text import find_statute_references
+from nyaya.statute_refs import find_all_statute_refs
 
 _SUMMARY_COLUMNS = """
     j.id, coalesce(j.case_name, j.title) AS title, j.decision_date, j.bench,
@@ -84,8 +87,8 @@ class JudgmentRepository:
         paragraphs = [Paragraph(**r) for r in rows]
         for paragraph in paragraphs:
             paragraph.statutes = [
-                StatuteRef(raw=m.raw, key=m.key, name=m.name, section=m.section)
-                for m in find_statute_references(paragraph.text)
+                StatuteRef(raw=m.raw, kind=m.kind, key=m.key, name=m.name, number=m.number, slug=m.slug)
+                for m in find_all_statute_refs(paragraph.text)
             ]
         references = self._db.fetch_all(
             """SELECT c.citing_seq, c.raw, c.cited_judgment_id, coalesce(j.case_name, j.title) AS title,
@@ -347,6 +350,72 @@ class StatuteRepository:
             ],
         )
 
+    def provision(self, kind: str, key: str, slug: str) -> Provision | None:
+        """Every judgment that refers to this provision (with the referring paragraphs), and paragraphs from other
+        judgments that discuss it, nearest in meaning to the first referring paragraph."""
+        from nyaya.provisions import official_search_url, reviewed_description
+
+        rows = self._db.fetch_all(
+            """SELECT r.judgment_id, r.seq, r.name, r.number, p.label, p.text
+               FROM statute_refs r JOIN paragraphs p ON p.judgment_id = r.judgment_id AND p.seq = r.seq
+               WHERE r.kind = %s AND r.key = %s AND r.slug = %s""",
+            [kind, key, slug],
+        )
+        if not rows:
+            return None
+        by_judgment: dict[str, list[dict]] = {}
+        for row in rows:
+            by_judgment.setdefault(row["judgment_id"], []).append(row)
+        summaries = self._judgments.summaries(by_judgment.keys())
+        ordered = sorted(by_judgment, key=lambda j: summaries[j].decision_date or date.min, reverse=True)
+        judgments = [
+            ProvisionJudgment(
+                judgment=summaries[j],
+                paragraphs=[StatuteParagraph(label=r["label"], text=r["text"]) for r in by_judgment[j]],
+            )
+            for j in ordered[:50]
+        ]
+        name, number = rows[0]["name"], rows[0]["number"]
+        related = self._related_by_meaning(kind, key, slug, rows, set(by_judgment))
+        description = reviewed_description(key) if kind in ("section", "article") else None
+        return Provision(
+            kind=kind,
+            key=key,
+            name=name,
+            number=number,
+            judgments_total=len(ordered),
+            judgments=judgments,
+            related=related,
+            official_url=official_search_url(name),
+            description=description["text"] if description else None,
+            reviewed_by=description["reviewed_by"] if description else None,
+            reviewed_on=description["reviewed_on"] if description else None,
+        )
+
+    def _related_by_meaning(self, kind, key, slug, rows, exclude: set[str]) -> list[RelatedParagraph]:
+        """Judgments that refer to other provisions of the same Act (or Constitution), nearest in meaning to the first
+        referring paragraph. Judgments already listed as referring to this provision are left out."""
+        seed = max(rows, key=lambda r: len(r["text"]))
+        found = self._db.fetch_all(
+            """SELECT * FROM (
+                   SELECT DISTINCT ON (p.judgment_id) p.judgment_id, p.label, p.text,
+                          p.embedding <=> seed.embedding AS distance
+                   FROM statute_refs r
+                   JOIN paragraphs p ON p.judgment_id = r.judgment_id AND p.seq = r.seq
+                   JOIN paragraphs seed ON seed.judgment_id = %(seed_j)s AND seed.seq = %(seed_s)s
+                   WHERE r.kind = %(kind)s AND r.key = %(key)s AND r.slug <> %(slug)s
+                     AND p.judgment_id <> ALL(%(exclude)s) AND p.embedding IS NOT NULL
+                   ORDER BY p.judgment_id, distance
+               ) best ORDER BY distance LIMIT 8""",
+            {"seed_j": seed["judgment_id"], "seed_s": seed["seq"], "kind": kind, "key": key, "slug": slug,
+             "exclude": list(exclude)},
+        ) if seed.get("judgment_id") else []
+        summaries = self._judgments.summaries(f["judgment_id"] for f in found)
+        return [
+            RelatedParagraph(judgment=summaries[f["judgment_id"]], label=f["label"], text=f["text"])
+            for f in found if f["judgment_id"] in summaries
+        ]
+
     def section(self, key: str, section: str):
         from nyaya.text import statute_key
 
@@ -363,7 +432,8 @@ class StatuteRepository:
         for judgment_id, summary in self._judgments.summaries(ids).items():
             hits = []
             for paragraph in self._judgments.paragraphs(judgment_id):
-                if any(m.key == key and m.section == section for m in find_statute_references(paragraph.text)):
+                if any(m.key == key and m.slug == section and m.kind == "section"
+                       for m in find_all_statute_refs(paragraph.text)):
                     hits.append(StatuteParagraph(label=paragraph.label, text=paragraph.text))
             if hits:
                 found.append(StatuteJudgment(judgment=summary, paragraphs=hits))

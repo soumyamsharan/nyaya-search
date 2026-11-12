@@ -103,8 +103,8 @@ function AnnotatedText({
     })),
     ...statutes.map((st) => ({
       raw: st.raw,
-      href: `/statutes/${st.key}/sections/${st.section}`,
-      title: `All judgments that interpret Section ${st.section} of ${st.name}`,
+      href: `/provisions/${st.kind}/${st.key}/${st.slug}`,
+      title: `Judgments that refer to ${st.raw}, and what it means`,
       tone: "rounded bg-emerald-50 px-0.5 text-emerald-800 underline decoration-dotted hover:bg-emerald-100",
     })),
   ];

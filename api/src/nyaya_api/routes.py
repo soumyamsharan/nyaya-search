@@ -14,6 +14,7 @@ from nyaya.domain import (
     NoteCreate,
     NoteCreated,
     NoteRenewed,
+    Provision,
     SearchResponse,
     SharedNote,
     StatuteActPage,
@@ -92,6 +93,24 @@ def get_statute_section(
     if page is None:
         raise NotFoundError("no judgments refer to this section")
     return page
+
+
+PROVISION_KIND = Annotated[str, Path(pattern=r"^(section|article|rule|regulation|notification)$")]
+
+
+@v1.get("/provisions/{kind}/{key}/{slug}", response_model=Provision, tags=["statutes"])
+def get_provision(
+    kind: PROVISION_KIND,
+    key: Annotated[str, Path(pattern=r"^[a-z0-9-]{3,80}$")],
+    slug: Annotated[str, Path(pattern=r"^[a-z0-9-]{1,40}$")],
+    svc: ServicesDep,
+) -> Provision:
+    """One provision (section, article, rule, regulation or notification): the judgments that refer to it,
+    related judgments that refer to other provisions of the same Act, and its India Code search link."""
+    result = svc.statutes.provision(kind, key, slug)
+    if result is None:
+        raise NotFoundError("no judgments refer to this provision")
+    return result
 
 
 NOTE_ID = Annotated[str, Path(pattern=r"^[0-9a-f-]{36}$", description="Shared note id")]

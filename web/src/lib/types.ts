@@ -13,11 +13,16 @@ export interface CitationRef {
   citation: string | null;
 }
 
+export const PROVISION_KINDS = ["section", "article", "rule", "regulation", "notification"] as const;
+export type ProvisionKind = (typeof PROVISION_KINDS)[number];
+
 export interface StatuteRef {
   raw: string;
+  kind: ProvisionKind;
   key: string;
   name: string;
-  section: string;
+  number: string;
+  slug: string;
 }
 
 export interface Paragraph extends ParagraphRef {
@@ -45,6 +50,31 @@ export interface StatuteSectionPage {
   name: string;
   section: string;
   judgments: { judgment: JudgmentSummary; paragraphs: { label: string; text: string }[] }[];
+}
+
+export interface ProvisionJudgment {
+  judgment: JudgmentSummary;
+  paragraphs: { label: string; text: string }[];
+}
+
+export interface RelatedParagraph {
+  judgment: JudgmentSummary;
+  label: string;
+  text: string;
+}
+
+export interface Provision {
+  kind: ProvisionKind;
+  key: string;
+  name: string;
+  number: string;
+  judgments_total: number;
+  judgments: ProvisionJudgment[];
+  related: RelatedParagraph[];
+  official_url: string;
+  description: string | null;
+  reviewed_by: string | null;
+  reviewed_on: string | null;
 }
 
 export interface JudgmentSummary {

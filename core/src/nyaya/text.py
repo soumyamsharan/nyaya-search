@@ -267,13 +267,28 @@ _GENERIC_ACTS = {"act", "code", "rules", "regulations"}
 _YEAR_SUFFIX = re.compile(r",?\s*\b(?:18|19|20)\d{2}\b.*$")
 
 
+# Abbreviations judgments use for common Acts, mapped to the canonical key of the full name.
+_ABBREVIATIONS = {
+    "n-i-act": "negotiable-instruments-act",
+    "ni-act": "negotiable-instruments-act",
+    "negotiable-instrument-act": "negotiable-instruments-act",
+    "ipc": "penal-code",
+    "i-p-c": "penal-code",
+    "crpc": "code-of-criminal-procedure",
+    "cr-p-c": "code-of-criminal-procedure",
+    "cpc": "code-of-civil-procedure",
+    "c-p-c": "code-of-civil-procedure",
+}
+
+
 def statute_key(name: str) -> str | None:
-    """Canonical URL key for an Act: 'Indian Penal Code 1860' -> 'penal-code'; None for generic words."""
+    """Canonical URL key for an Act: 'Indian Penal Code 1860' and 'IPC' -> 'penal-code'; None for generic words."""
     cleaned = _YEAR_SUFFIX.sub("", name.lower()).replace(",", " ")
     words = [w for w in re.sub(r"[^a-z ]+", " ", cleaned).split() if w not in ("the", "indian")]
     if not words or " ".join(words) in _GENERIC_ACTS:
         return None
-    return "-".join(words)
+    key = "-".join(words)
+    return _ABBREVIATIONS.get(key, key)
 
 
 @dataclass(frozen=True)
