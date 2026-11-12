@@ -140,3 +140,19 @@ export interface SearchFilters {
   act?: string;
   section?: string;
 }
+
+export interface NoteCreated {
+  id: string;
+  owner_token: string;
+  expires_at: string;
+}
+
+export interface NoteRenewed {
+  expires_at: string;
+}
+
+export interface SharedNote {
+  id: string;
+  expires_at: string;
+  items: { judgment: JudgmentSummary | null; label: string; text: string | null }[];
+}

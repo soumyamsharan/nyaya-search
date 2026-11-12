@@ -7,6 +7,9 @@ import type {
   SearchFilters,
   SearchResponse,
   StatuteIndex,
+  NoteCreated,
+  NoteRenewed,
+  SharedNote,
   StatuteSectionPage,
 } from "./types";
 
@@ -38,6 +41,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("unreachable", "The service is temporarily unavailable. Please try again shortly.");
   }
+  if (response.status === 204) return undefined as T;
   if (response.ok) return (await response.json()) as T;
   const body = await response.json().catch(() => null);
   const code: string | undefined = body?.error?.code;
@@ -66,6 +70,13 @@ export const api = {
   },
   judges: () => request<{ judges: JudgeCount[] }>("/v1/judges").then((r) => r.judges),
   statutes: () => request<StatuteIndex>("/v1/statutes"),
+  createNote: (items: { judgment_id: string; label: string }[]) =>
+    request<NoteCreated>("/v1/notes", { method: "POST", body: JSON.stringify({ items }) }),
+  getNote: (id: string) => request<SharedNote>(`/v1/notes/${enc(id)}`),
+  renewNote: (id: string, token: string) =>
+    request<NoteRenewed>(`/v1/notes/${enc(id)}/renewal`, { method: "POST", headers: { "X-Note-Token": token } }),
+  revokeNote: (id: string, token: string) =>
+    request<void>(`/v1/notes/${enc(id)}`, { method: "DELETE", headers: { "X-Note-Token": token } }),
   statuteSection: (key: string, section: string) =>
     request<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`),
   judgment: (id: string) => request<Judgment>(`/v1/judgments/${enc(id)}`),

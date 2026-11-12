@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 
 from nyaya.container import Services
 from nyaya.domain import (
@@ -11,11 +11,16 @@ from nyaya.domain import (
     CitationGraph,
     JudgeList,
     Judgment,
+    NoteCreate,
+    NoteCreated,
+    NoteRenewed,
     SearchResponse,
+    SharedNote,
     StatuteIndex,
     StatuteSectionPage,
 )
-from nyaya.errors import NotFoundError
+from nyaya.errors import InvalidRequestError, NotFoundError
+from nyaya.notes import NoteItem, resolve
 from nyaya_api.ratelimit import enforce_rate_limit
 from nyaya_api.schemas import ErrorResponse, Health, JudgmentId, QuestionRequest, SearchParams
 
@@ -73,6 +78,42 @@ def get_statute_section(
     if page is None:
         raise NotFoundError("no judgments refer to this section")
     return page
+
+
+NOTE_ID = Annotated[str, Path(pattern=r"^[0-9a-f-]{36}$", description="Shared note id")]
+OwnerToken = Annotated[str, Header(alias="X-Note-Token", min_length=20, max_length=200)]
+
+
+@v1.post("/notes", response_model=NoteCreated, status_code=201, tags=["notes"])
+def create_note(body: NoteCreate, svc: ServicesDep, response: Response) -> NoteCreated:
+    """Save references to corpus paragraphs as a read-only shared note. Only references are stored, never text."""
+    response.headers.update(NO_STORE)
+    missing = [r.judgment_id for r in body.items if not svc.judgments.exists(r.judgment_id)]
+    if missing:
+        raise InvalidRequestError(f"unknown judgment: {missing[0]}")
+    created = svc.notes.create([NoteItem(r.judgment_id, r.label) for r in body.items])
+    return NoteCreated(id=created.id, owner_token=created.owner_token, expires_at=created.expires_at)
+
+
+@v1.get("/notes/{note_id}", response_model=SharedNote, tags=["notes"])
+def get_note(note_id: NOTE_ID, svc: ServicesDep, response: Response) -> SharedNote:
+    """A shared note, read from the corpus. Revoked and expired notes return 410 note_withdrawn."""
+    response.headers.update(NO_STORE)
+    items, expires_at = svc.notes.read(note_id)
+    return SharedNote(id=note_id, expires_at=expires_at, items=resolve(items, svc.judgments))
+
+
+@v1.post("/notes/{note_id}/renewal", response_model=NoteRenewed, tags=["notes"])
+def renew_note(note_id: NOTE_ID, svc: ServicesDep, token: OwnerToken) -> NoteRenewed:
+    """Extend a note's life by 30 days. Requires the owner token."""
+    return NoteRenewed(expires_at=svc.notes.renew(note_id, token))
+
+
+@v1.delete("/notes/{note_id}", status_code=204, tags=["notes"])
+def revoke_note(note_id: NOTE_ID, svc: ServicesDep, token: OwnerToken) -> Response:
+    """Withdraw a shared note so its link shows nothing. Requires the owner token."""
+    svc.notes.revoke(note_id, token)
+    return Response(status_code=204)
 
 
 @v1.get("/judgments/{judgment_id}", response_model=Judgment, tags=["judgments"])

@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ShareNote from "./ShareNote";
 import { NOTES_CHANGED, type NoteItem, clearNotes, downloadMarkdown, loadNotes, notesToMarkdown } from "@/lib/notes";
 
 export default function NotesBar() {
   const [items, setItems] = useState<NoteItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     const refresh = () => setItems(loadNotes());
@@ -33,6 +35,15 @@ export default function NotesBar() {
       <button onClick={exportNote} className="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50">
         Export Markdown
       </button>
+      <div className="relative">
+        <button
+          onClick={() => setSharing((open) => !open)}
+          className="rounded border border-indigo-300 px-2 py-1 text-indigo-700 hover:bg-indigo-50"
+        >
+          Share
+        </button>
+        {sharing ? <ShareNote onClose={() => setSharing(false)} /> : null}
+      </div>
       {items.length ? (
         <button onClick={clearNotes} className="text-slate-500 hover:underline">
           Clear

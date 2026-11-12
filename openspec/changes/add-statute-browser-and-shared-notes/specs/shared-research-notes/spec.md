@@ -5,7 +5,7 @@ Lets a lawyer send their research note to a colleague or client as a read-only l
 ## ADDED Requirements
 
 ### Requirement: Share a note as a link
-The user SHALL be able to save the current research note as a shared note and receive a link to it. The shared note SHALL contain only the paragraphs, case names, citations and ¶ numbers the user added to the note.
+The user SHALL be able to save the current research note as a shared note and receive a link to it. The shared note SHALL store only references to corpus paragraphs (judgment and ¶ number), never text supplied by the user. Its paragraphs, case names and citations are read from the corpus when the link is opened.
 
 #### Scenario: Share a note
 - **WHEN** the user has added three paragraphs and chooses Share

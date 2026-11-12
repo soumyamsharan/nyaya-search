@@ -6,10 +6,10 @@
 - [x] 1.5 Tests: exact section matching (138 vs 1380), empty section, same-sentence rule
 
 ## 2. Shared research notes
-- [ ] 2.1 `shared_notes` migration; create, read and revoke endpoints; ids are random UUIDs
-- [ ] 2.2 Owner token returned on create and stored in the browser; revoke requires it
-- [ ] 2.3 Share button with the disclosure notice; read-only note page; withdrawn page
-- [ ] 2.4 Shared notes expire after 30 days unless renewed; tests for empty note, revoke, expiry, and no content in logs
+- [x] 2.1 `shared_notes` migration; create, read and revoke endpoints; ids are random UUIDs
+- [x] 2.2 Owner token returned on create and stored in the browser; revoke requires it
+- [x] 2.3 Share button with the disclosure notice; read-only note page; withdrawn page
+- [x] 2.4 Shared notes expire after 30 days unless renewed; tests for empty note, revoke, expiry, and no content in logs
 
 ## 3. Verification
 - [ ] 3.1 Live test of both features on the deployed site

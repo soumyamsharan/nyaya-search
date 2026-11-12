@@ -1,6 +1,6 @@
 """Domain models shared by the pipeline, the API and the evals."""
 
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -209,3 +209,34 @@ class StatuteSectionPage(BaseModel):
     name: str
     section: str
     judgments: list[StatuteJudgment]
+
+
+class NoteRef(BaseModel):
+    judgment_id: str
+    label: str = Field(pattern=r"^[0-9A-Za-z]{1,8}(-[0-9A-Za-z]{1,8})?$", max_length=20)
+
+
+class NoteCreate(BaseModel):
+    items: list[NoteRef] = Field(min_length=1, max_length=200)
+
+
+class NoteCreated(BaseModel):
+    id: str
+    owner_token: str = Field(description="Shown once. Needed to renew or revoke this note; keep it private.")
+    expires_at: datetime
+
+
+class NoteParagraph(BaseModel):
+    judgment: JudgmentSummary | None
+    label: str
+    text: str | None = Field(description="Null when the paragraph no longer exists in the corpus")
+
+
+class SharedNote(BaseModel):
+    id: str
+    expires_at: datetime
+    items: list[NoteParagraph]
+
+
+class NoteRenewed(BaseModel):
+    expires_at: datetime

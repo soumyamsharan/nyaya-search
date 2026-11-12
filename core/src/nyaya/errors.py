@@ -23,3 +23,9 @@ class LlmUnavailableError(NyayaError):
     """Provider failed, or nothing it produced survived grounding."""
 
     code = "llm_unavailable"
+
+
+class NoteWithdrawnError(NyayaError):
+    """A shared note that was revoked or has expired."""
+
+    code = "note_withdrawn"

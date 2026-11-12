@@ -6,7 +6,14 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from nyaya.errors import InvalidRequestError, LlmBusyError, LlmUnavailableError, NotFoundError, NyayaError
+from nyaya.errors import (
+    InvalidRequestError,
+    LlmBusyError,
+    LlmUnavailableError,
+    NoteWithdrawnError,
+    NotFoundError,
+    NyayaError,
+)
 from nyaya_api.ratelimit import RateLimitedError
 
 log = logging.getLogger("nyaya.api")
@@ -17,6 +24,7 @@ _STATUS = {
     RateLimitedError: 429,
     LlmBusyError: 503,
     LlmUnavailableError: 503,
+    NoteWithdrawnError: 410,
 }
 RETRY_AFTER_SECONDS = {RateLimitedError: "60", LlmBusyError: "3600", LlmUnavailableError: "60"}
 
