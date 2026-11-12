@@ -1,0 +1,26 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# data and model caches
+data/
+models/
+*.dump
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+evals/results/
+
+# node
+node_modules/
+.next/
+web/out/
+
+# os
+.DS_Store
+*.log

@@ -1,0 +1,92 @@
+# Fact-pattern eval set. Each query describes facts in a lawyer's words; `expected` lists judgments a lawyer would
+# cite for it. Draft written by the developer from the reporters' issue statements, paraphrased so the
+# wording does not copy the judgment. Needs review by a practising advocate before quoting numbers as final.
+queries:
+  - id: ni138-sentence
+    query: My clients were convicted for bounced cheques under the Negotiable Instruments Act and sentenced to six months plus paying the cheque amounts; can the conviction and jail term be challenged?
+    expected: [2024_10_2248_2264]
+    author: developer-draft
+  - id: eviction-demolition-notice
+    query: Landlords bought an old building with existing tenants; the municipality later issued a demolition notice because the building was unsafe. Can the landlords evict the tenants for reconstruction?
+    expected: [2024_1_1105_1127]
+    author: developer-draft
+  - id: anticipatory-bail-murder
+    query: High Court gave anticipatory bail to accused in a murder case even though the chargesheet had already been filed with specific allegations against them. Should the bail be cancelled?
+    expected: [2024_12_2083_2088]
+    author: developer-draft
+  - id: mact-future-prospects-allowances
+    query: Road accident death claim; should house rent allowance, flexible benefits and the employer's provident fund contribution be left out of the deceased's salary when adding future prospects for compensation?
+    expected: [2024_7_1433_1442]
+    author: developer-draft
+  - id: arbitration-seat-india
+    query: Foreign distributor agreement with an arbitration clause; is a petition to appoint an arbitrator under section 11 maintainable in India and is the seat of arbitration in India?
+    expected: [2024_11_1142_1232]
+    author: developer-draft
+  - id: quash-498a-dowry
+    query: Wife filed an FIR for cruelty and dowry demands against the husband's relatives with vague general allegations; should the High Court quash the criminal proceedings under 498A and the Dowry Prohibition Act?
+    expected: [2024_12_559_573]
+    author: developer-draft
+  - id: ndps-bail-hiv
+    query: Woman caught with a commercial quantity of narcotics was granted bail only because she is HIV positive, without considering the twin conditions for bail under the NDPS Act.
+    expected: [2024_7_1314_1320]
+    author: developer-draft
+  - id: ndps-52a-sampling
+    query: Ganja seizure conviction; the police did not follow the inventory, photographing and sampling procedure before a magistrate. Is the NDPS conviction vitiated?
+    expected: [2025_1_1524_1580]
+    author: developer-draft
+  - id: specific-performance-gpa
+    query: Suit for specific performance of a 1990 agreement to sell which was executed through a general power of attorney holder of the owner; was the agreement validly proved and enforceable?
+    expected: [2024_11_2375_2410]
+    author: developer-draft
+  - id: land-acquisition-urgency
+    query: Government invoked the urgency clause to acquire farmland for an expressway development project, skipping the hearing of objections from landowners. Is the acquisition valid?
+    expected: [2024_11_1064_1098]
+    author: developer-draft
+  - id: disciplinary-no-evidence
+    query: Government servant dismissed after a departmental inquiry for a major penalty in which no witness was examined and no evidence was recorded. Is the inquiry valid under the service discipline rules?
+    expected: [2024_11_1634_1646]
+    author: developer-draft
+  - id: bank-post-retirement-inquiry
+    query: Bank started disciplinary proceedings against an officer after he had already retired on superannuation. Can the bank continue the proceedings?
+    expected: [2024_11_799_821]
+    author: developer-draft
+  - id: pocso-csam-viewing
+    query: Accused downloaded and kept child sexual abuse videos on his phone without sharing them; is merely viewing or storing such material an offence under the POCSO Act?
+    expected: [2024_10_154_314]
+    author: developer-draft
+  - id: acquittal-reversed-circumstantial
+    query: Trial court acquitted the accused in a murder case resting only on circumstantial evidence; the High Court reversed the acquittal. When can an appellate court overturn an acquittal?
+    expected: [2024_2_1178_1195]
+    author: developer-draft
+  - id: gst-itc-building-on-rent
+    query: Company built a shopping mall to let out on rent and wants input tax credit on the construction costs under GST; does the blocked credit for immovable property apply or is the building plant or machinery?
+    expected: [2024_10_793_859]
+    author: developer-draft
+  - id: consumer-insurance-full-amount
+    query: Insurer settled only part of the claim; the consumer wants the entire sum insured released. The district forum partly allowed it but the state commission reduced the award.
+    expected: [2024_12_1108_1116]
+    author: developer-draft
+  - id: ncl-certificate-late
+    query: Woman candidate lost reserved category benefit because she could not produce a valid non-creamy layer certificate by the last date of the application, though a later corrigendum allowed late submission.
+    expected: [2024_1_1223_1229]
+    author: developer-draft
+  - id: ibc-dissenting-creditor
+    query: Under the insolvency resolution plan, is a dissenting secured financial creditor entitled to receive at least the value of its security interest?
+    expected: [2024_1_114_139]
+    author: developer-draft
+  - id: ibc-limitation-balance-sheet
+    query: Insolvency application filed more than three years after default; can entries in the company's balance sheet count as acknowledgment of debt to extend limitation?
+    expected: [2024_10_1462_1474]
+    author: developer-draft
+  - id: readiness-willingness
+    query: Buyer sued for specific performance of a sale agreement but could not show he had the money and was always ready and willing to pay the balance consideration.
+    expected: [2024_11_1325_1328]
+    author: developer-draft
+  - id: exam-normalisation
+    query: State public service exam held in two shifts used normalisation of marks; candidates challenge the normalisation and the merit list rule.
+    expected: [2024_6_36_52]
+    author: developer-draft
+  - id: invalid-entry-check
+    query: Deliberately invalid entry to check that the runner reports and excludes judgments missing from the corpus.
+    expected: [1999_1_1_1]
+    author: developer-draft

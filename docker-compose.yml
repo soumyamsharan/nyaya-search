@@ -1,0 +1,25 @@
+# Local development: database only. API and pipeline run natively so models can use the Mac GPU.
+services:
+  db:
+    image: paradedb/paradedb:0.26.6-pg17
+    environment:
+      POSTGRES_USER: nyaya
+      POSTGRES_DB: nyaya
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./data/backups:/backups
+    mem_limit: 4g
+    shm_size: 1g # HNSW index builds (and restores) need more than Docker's 64 MB default
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nyaya -d nyaya"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:

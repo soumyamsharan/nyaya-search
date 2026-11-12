@@ -1,0 +1,71 @@
+# Production stack on the server: Caddy (only public service) -> API -> Postgres.
+# Usage on the server, from the directory holding this file, Caddyfile and .env:
+#   docker compose -f compose.prod.yml up -d
+name: nyaya
+
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    restart: unless-stopped
+
+  api:
+    image: ${API_IMAGE:?set API_IMAGE in .env}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://nyaya@db:5432/${POSTGRES_DB:-nyaya}  # password comes from POSTGRES_PASSWORD
+      MODEL_DEVICE: cpu
+      # Only Caddy can reach the API (no published port), so forwarded client IPs are trusted from any peer.
+      TRUSTED_PROXY_IPS: "*"
+    expose:
+      - "8000"
+    volumes:
+      - models:/models
+    tmpfs:
+      - /tmp
+    read_only: true
+    user: "10001:10001"
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 4g
+    restart: unless-stopped
+
+  db:
+    image: paradedb/paradedb:0.26.6-pg17
+    environment:
+      POSTGRES_USER: nyaya
+      POSTGRES_DB: ${POSTGRES_DB:-nyaya}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nyaya"]
+      interval: 5s
+      retries: 20
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 5g
+    shm_size: 1g # HNSW index builds (and pg_restore) need more than Docker's 64 MB default
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  models:
+  caddy_data:
+  caddy_config:

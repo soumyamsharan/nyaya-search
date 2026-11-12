@@ -1,0 +1,7 @@
+**
+!core/pyproject.toml
+!core/src/**
+!api/pyproject.toml
+!api/src/**
+!deploy/requirements-api.txt
+**/__pycache__

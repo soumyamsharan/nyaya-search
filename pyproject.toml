@@ -1,0 +1,36 @@
+[project]
+name = "nyaya-search"
+version = "0.1.0"
+description = "Fact-pattern search over Indian Supreme Court judgments"
+requires-python = ">=3.12,<3.13"
+dependencies = ["nyaya-core", "nyaya-pipeline", "nyaya-api", "nyaya-evals"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["core", "pipeline", "api", "evals"]
+
+[tool.uv.sources]
+nyaya-core = { workspace = true }
+nyaya-pipeline = { workspace = true }
+nyaya-api = { workspace = true }
+nyaya-evals = { workspace = true }
+
+[dependency-groups]
+dev = ["pytest>=8.3,<9", "ruff>=0.8,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs the local database, models and LLM (run with -m integration)"]
+addopts = "-m \"not integration\""
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["nyaya", "nyaya_api", "nyaya_pipeline", "nyaya_evals"]

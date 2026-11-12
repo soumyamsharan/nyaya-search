@@ -1,0 +1,24 @@
+[project]
+name = "nyaya-api"
+version = "0.1.0"
+description = "Nyaya Search REST API"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "nyaya-core",
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "limits>=3.13,<6",
+]
+
+[project.scripts]
+api = "nyaya_api.main:run"
+
+[tool.uv.sources]
+nyaya-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.25,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nyaya_api"]

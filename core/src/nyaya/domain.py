@@ -1,0 +1,147 @@
+"""Domain models shared by the pipeline, the API and the evals."""
+
+from datetime import date
+from enum import StrEnum
+
+from pydantic import BaseModel, Field
+
+
+class Role(StrEnum):
+    """The job a paragraph does in a judgment (machine-assigned)."""
+
+    FACTS = "facts"
+    ISSUE = "issue"
+    PETITIONER_ARGUMENT = "petitioner_argument"
+    RESPONDENT_ARGUMENT = "respondent_argument"
+    STATUTE = "statute"
+    PRECEDENT = "precedent"
+    REASONING = "reasoning"
+    CONCLUSION = "conclusion"
+
+
+class Outcome(StrEnum):
+    ALLOWED = "allowed"
+    PARTLY_ALLOWED = "partly_allowed"
+    DISMISSED = "dismissed"
+    DISPOSED = "disposed"
+    OTHER = "other"
+
+
+class SearchMode(StrEnum):
+    BM25 = "bm25"
+    VECTOR = "vector"
+    HYBRID = "hybrid"
+    HYBRID_RERANK = "hybrid_rerank"
+
+
+class ParagraphRef(BaseModel):
+    seq: int
+    label: str
+
+
+class Paragraph(ParagraphRef):
+    text: str
+    label_derived: bool = False
+    role: Role | None = None
+
+
+class JudgmentSummary(BaseModel):
+    id: str
+    title: str
+    decision_date: date | None
+    bench: list[str]
+    citation: str | None = Field(description="Primary citation: neutral citation, else SCR")
+    cited_by_count: int = 0
+
+
+class FrontMatterSection(BaseModel):
+    section: str
+    title: str
+    text: str
+
+
+class Judgment(JudgmentSummary):
+    author: str | None
+    neutral_citation: str | None
+    scr_citation: str | None
+    disposal_nature: str | None
+    pdf_url: str
+    acts: list[str]
+    reporter_front_matter: list[FrontMatterSection]
+    paragraphs: list[Paragraph]
+    numbering_derived: bool
+
+
+class SearchFilters(BaseModel):
+    year_from: int | None = None
+    year_to: int | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    judge: str | None = None  # kept for old links; same as a one-item `judges`
+    judges: list[str] = Field(default_factory=list)  # every one must be on the bench
+    author: str | None = None
+    outcome: Outcome | None = None
+    roles: list[Role] = Field(default_factory=list)  # match only paragraphs with these roles
+    act: str | None = None
+    section: str | None = None
+    judgment_id: str | None = None  # internal: restricts retrieval to one judgment (follow-up questions)
+
+
+class SearchHit(BaseModel):
+    """A retrieved paragraph before hydration."""
+
+    paragraph_id: int
+    judgment_id: str
+    score: float
+
+
+class SearchResult(BaseModel):
+    judgment: JudgmentSummary
+    matched_paragraph: Paragraph
+    score: float
+
+
+class SearchResponse(BaseModel):
+    query_type: str  # fact_pattern | citation
+    results: list[SearchResult]
+    message: str | None = None
+
+
+class CitedSentence(BaseModel):
+    text: str
+    paragraphs: list[ParagraphRef]
+
+
+class Breakdown(BaseModel):
+    facts: list[CitedSentence]
+    issues: list[CitedSentence]
+    held: list[CitedSentence]
+    ratio: list[CitedSentence]
+    model: str
+    machine_generated: bool = True
+
+
+class Answer(BaseModel):
+    answered: bool
+    sentences: list[CitedSentence]
+    message: str | None = None
+    machine_generated: bool = True
+
+
+class CitationLink(BaseModel):
+    judgment: JudgmentSummary
+    paragraph: ParagraphRef = Field(description="Paragraph of the citing judgment")
+    overruling_language: bool = False
+    paragraph_text: str | None = None
+
+
+class UnresolvedCitation(BaseModel):
+    raw: str
+    paragraph: ParagraphRef
+
+
+class CitationGraph(BaseModel):
+    cites: list[CitationLink]
+    cited_by: list[CitationLink]
+    unresolved: list[UnresolvedCitation]
+    overruling_evidence: list[CitationLink]
