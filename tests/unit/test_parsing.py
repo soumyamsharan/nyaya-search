@@ -97,3 +97,18 @@ def test_blank_pdf_looks_scanned():
     for _ in range(3):
         doc.new_page()
     assert extract_pdf(doc.tobytes()).looks_scanned
+
+
+def test_quoted_judgment_with_its_own_numbering_stays_inside_the_quoting_paragraph():
+    parsed = parse_judgment(body(
+        "1. A.", "2. B.", "3. The High Court held:", "3. Quoted three.", "4. Quoted four.", "5. Quoted five.",
+        "4. Real four.", "5. Real five.",
+    ))
+    assert [p.label for p in parsed.paragraphs] == ["1", "2", "3", "4", "5"]
+    assert "Quoted five" in parsed.paragraphs[2].text
+    assert parsed.paragraphs[3].text == "Real four."
+
+
+def test_quoted_statute_section_does_not_swallow_the_next_paragraph():
+    parsed = parse_judgment(body("1. A.", "2. B.", "3. Rule reads:", "2. Quoted rule text.", "4. Real four."))
+    assert [p.label for p in parsed.paragraphs] == ["1", "2", "3", "4"]

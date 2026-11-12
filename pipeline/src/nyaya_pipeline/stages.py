@@ -15,6 +15,7 @@ from nyaya.parsing.pdf import extract_pdf
 from nyaya.parsing.scr import EXTRACTOR_VERSION, ParsedJudgment, parse_judgment
 from nyaya.roles import assign_roles
 from nyaya.text import (
+    cites_cases,
     clean_case_title,
     extract_citations,
     find_section_references,
@@ -294,10 +295,12 @@ def citations(db: Database) -> RunReport:
     aliases = build_aliases(own, entries)
 
     edges = []
+    flags = []
     for p in db.fetch_all(
         """SELECT p.judgment_id, p.seq, p.text FROM paragraphs p JOIN judgments j ON j.id = p.judgment_id
            WHERE j.status = 'ok'"""
     ):
+        flags.append((cites_cases(p["text"]), p["judgment_id"], p["seq"]))
         overruling = has_overruling_language(p["text"])
         for c in extract_citations(p["text"]):
             target = aliases.get(c.norm)
@@ -311,6 +314,10 @@ def citations(db: Database) -> RunReport:
     with db.connection() as conn, conn.transaction():
         conn.execute("DELETE FROM citations")
         conn.execute("DELETE FROM citation_aliases")
+        with conn.cursor() as cur:
+            cur.executemany(
+                "UPDATE paragraphs SET cites_cases = %s WHERE judgment_id = %s AND seq = %s", flags
+            )
         with conn.cursor() as cur:
             cur.executemany(
                 "INSERT INTO citation_aliases (citation_norm, judgment_id) VALUES (%s, %s)", list(aliases.items())

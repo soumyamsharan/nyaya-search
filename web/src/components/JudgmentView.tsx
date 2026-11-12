@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type MouseEvent, type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api } from "@/lib/api";
 import { ROLES, type Role, parseRoles, roleInfo } from "@/lib/roles";
 import { addNote, citedParagraph } from "@/lib/notes";
-import type { CitationGraph, Judgment, Paragraph } from "@/lib/types";
+import type { CitationGraph, CitationRef, Judgment, Paragraph } from "@/lib/types";
 import { BreakdownPanel, CitationsPanel, QuestionPanel } from "./JudgmentPanels";
 import { Notice, Section, StatusMessage, formatDate } from "./ui";
 
@@ -51,6 +52,61 @@ function RoleTag({ role }: { role: Role | null }) {
   return info ? (
     <span className={`mb-0.5 inline-block rounded px-1.5 text-[11px] font-medium ${info.tone}`}>{info.label}</span>
   ) : null;
+}
+
+/** The "Cites cases" toggle lives in the URL too (?cites=1), and combines with the role chips. */
+function useCitesFilter(): [boolean, (on: boolean) => void] {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const on = params.get("cites") === "1";
+  const set = (value: boolean) => {
+    const query = new URLSearchParams(params);
+    if (value) query.set("cites", "1");
+    else query.delete("cites");
+    router.replace(`${pathname}${query.size ? `?${query}` : ""}${window.location.hash}`, { scroll: false });
+  };
+  return [on, set];
+}
+
+/**
+ * Paragraph text with each citation highlighted: a link when that judgment is in the corpus, otherwise a hint
+ * that it isn't. Matches the citation text as printed, in order.
+ */
+function AnnotatedText({ text, references }: { text: string; references: CitationRef[] }) {
+  if (!references.length) return <>{text}</>;
+  const nodes: ReactNode[] = [];
+  let rest = text;
+  let key = 0;
+  for (const ref of references) {
+    const at = rest.indexOf(ref.raw);
+    if (at < 0) continue;
+    nodes.push(rest.slice(0, at));
+    const label = ref.raw;
+    nodes.push(
+      ref.judgment_id ? (
+        <Link
+          key={key++}
+          href={`/judgments/${ref.judgment_id}`}
+          title={`${ref.title ?? ""}${ref.citation ? `, ${ref.citation}` : ""}`}
+          className="rounded bg-yellow-100 px-0.5 text-indigo-800 underline decoration-dotted hover:bg-yellow-200"
+        >
+          {label}
+        </Link>
+      ) : (
+        <span
+          key={key++}
+          title="This case is not in the Nyaya Search corpus"
+          className="rounded bg-slate-100 px-0.5 text-slate-600"
+        >
+          {label}
+        </span>
+      ),
+    );
+    rest = rest.slice(at + ref.raw.length);
+  }
+  nodes.push(rest);
+  return <>{nodes}</>;
 }
 
 /** Role chips that filter the paragraph list; the selection lives in the URL (?roles=a,b) so it can be shared. */
@@ -115,7 +171,9 @@ function ParagraphItem({ judgment, paragraph, highlighted }: { judgment: Judgmen
         </a>
         <div className="flex-1">
           <RoleTag role={paragraph.role} />
-          <p className="text-sm leading-relaxed text-slate-800">{paragraph.text}</p>
+          <p className="text-sm leading-relaxed text-slate-800">
+            <AnnotatedText text={paragraph.text} references={paragraph.references ?? []} />
+          </p>
         </div>
       </div>
       <div className="ml-15 mt-1 flex gap-3 text-xs text-indigo-700 opacity-60 group-hover:opacity-100">
@@ -129,6 +187,13 @@ function ParagraphItem({ judgment, paragraph, highlighted }: { judgment: Judgmen
         </button>
       </div>
     </li>
+  );
+}
+
+function visibleParagraphs(paragraphs: Paragraph[], roles: Role[], citesOnly: boolean): Paragraph[] {
+  return paragraphs.filter(
+    (p) =>
+      (!roles.length || (p.role !== null && roles.includes(p.role))) && (!citesOnly || p.cites_cases),
   );
 }
 
@@ -187,6 +252,7 @@ export default function JudgmentView({ id }: { id: string }) {
   const [error, setError] = useState<unknown>(null);
   const hash = useHash();
   const [selectedRoles, toggleRole] = useRoleFilter();
+  const [citesOnly, setCitesOnly] = useCitesFilter();
   const jumps = useParagraphJumps();
 
   useEffect(() => {
@@ -243,13 +309,17 @@ export default function JudgmentView({ id }: { id: string }) {
 
       <Section title="Judgment">
         <RoleFilter selected={selectedRoles} onToggle={toggleRole} counts={roleCounts(judgment.paragraphs)} />
+        <label className="mb-3 flex items-center gap-2 text-xs text-slate-700">
+          <input type="checkbox" checked={citesOnly} onChange={(e) => setCitesOnly(e.target.checked)} />
+          Cites cases only ({judgment.paragraphs.filter((p) => p.cites_cases).length} paragraphs)
+        </label>
         {judgment.numbering_derived ? (
           <div className="mb-3">
             <Notice tone="warn">Paragraph numbers here were added by Nyaya Search; they are not in the original judgment.</Notice>
           </div>
         ) : null}
         <ol className="space-y-2">
-          {judgment.paragraphs.filter((p) => !selectedRoles.length || (p.role && selectedRoles.includes(p.role))).map((p) => (
+          {visibleParagraphs(judgment.paragraphs, selectedRoles, citesOnly).map((p) => (
             <ParagraphItem key={p.seq} judgment={judgment} paragraph={p} highlighted={hash === `#p-${p.seq}`} />
           ))}
         </ol>

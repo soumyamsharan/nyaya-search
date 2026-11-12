@@ -7,6 +7,7 @@ from nyaya.db import Database
 from nyaya.domain import (
     CitationGraph,
     CitationLink,
+    CitationRef,
     FrontMatterSection,
     JudgeCount,
     Judgment,
@@ -64,10 +65,27 @@ class JudgmentRepository:
 
     def paragraphs(self, judgment_id: str) -> list[Paragraph]:
         rows = self._db.fetch_all(
-            "SELECT seq, label, label_derived, text, role FROM paragraphs WHERE judgment_id = %s ORDER BY seq",
+            "SELECT seq, label, label_derived, text, role, cites_cases FROM paragraphs "
+            "WHERE judgment_id = %s ORDER BY seq",
             [judgment_id],
         )
-        return [Paragraph(**r) for r in rows]
+        paragraphs = [Paragraph(**r) for r in rows]
+        references = self._db.fetch_all(
+            """SELECT c.citing_seq, c.raw, c.cited_judgment_id, coalesce(j.case_name, j.title) AS title,
+                      coalesce(j.neutral_citation, j.scr_citation) AS citation
+               FROM citations c LEFT JOIN judgments j ON j.id = c.cited_judgment_id
+               WHERE c.citing_judgment_id = %s ORDER BY c.citing_seq, c.id""",
+            [judgment_id],
+        )
+        by_seq: dict[int, list[CitationRef]] = {}
+        for ref in references:
+            by_seq.setdefault(ref["citing_seq"], []).append(
+                CitationRef(raw=ref["raw"], judgment_id=ref["cited_judgment_id"], title=ref["title"],
+                            citation=ref["citation"])
+            )
+        for paragraph in paragraphs:
+            paragraph.references = by_seq.get(paragraph.seq, [])
+        return paragraphs
 
     def front_matter(self, judgment_id: str) -> dict[str, str]:
         rows = self._db.fetch_all(

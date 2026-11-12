@@ -105,3 +105,16 @@ def test_boolean_operators(query, free, required, excluded):
 
 def test_only_excluded_terms_is_empty():
     assert parse_query("NOT bail").is_empty
+
+
+@pytest.mark.parametrize(
+    ("text", "norm"),
+    [
+        ("AIR 1946 Mad 151", "AIRHC|1946|MAD|151"),
+        ("(2000) 84 DLT 337 (DB)", "DLT|2000|84|337"),
+        ("(1876) 3 Ch D 637 (640)", "ENG|1876|3|CHD|637"),
+        ("[1990] 1 AC 109", "ENG|1990|1|AC|109"),
+    ],
+)
+def test_high_court_delhi_law_times_and_english_reports(text, norm):
+    assert normalize_citation(text) == norm

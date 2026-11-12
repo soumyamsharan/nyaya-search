@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from nyaya.parsing.pdf import Line
 
-EXTRACTOR_VERSION = 3
+EXTRACTOR_VERSION = 5
 
 BODY_MARKER = "judgment / order of the supreme court"
 SECTION_LABELS = {
@@ -137,19 +137,57 @@ def _parse_front_matter(lines: list[Line]) -> tuple[dict[str, str], list[str]]:
     return {k: join_lines(v) for k, v in sections.items() if v}, header
 
 
+def _line_number(text: str) -> int | None:
+    match = _PARA_START.match(text)
+    return int(match.group(1)) if match else None
+
+
+def _quote_resumes_at(numbers: list[int | None], start: int) -> int | None:
+    """Follow a run of consecutive numbers starting at numbers[start]; return the number that breaks it."""
+    previous = numbers[start]
+    for number in numbers[start + 1 :]:
+        if number is None:
+            continue
+        if number != previous + 1:
+            return number
+        previous = number
+    return None
+
+
 def _numbered_paragraphs(lines: list[Line]) -> list[ParsedParagraph]:
     paragraphs: list[tuple[int, int, list[str]]] = []  # (opinion, number, lines)
     preamble: list[str] = []
     opinion = 0
     expected = 1
     new_opinion_pending = False
-    for line in lines:
+    quote_last: int | None = None  # inside a quoted document's own numbering (e.g. a High Court's ¶13-29)
+    inner_last: int | None = None  # last number seen inside the current paragraph (lists: "1.", "2.", ...)
+    numbers = [
+        None if _HEADING_LINE.match(line.text) or _AUTHOR_LINE.match(line.text) else _line_number(line.text)
+        for line in lines
+    ]
+    for index, line in enumerate(lines):
         text = line.text
         if _HEADING_LINE.match(text) or _AUTHOR_LINE.match(text):
             new_opinion_pending = bool(paragraphs)
             continue
         match = _PARA_START.match(text)
-        number = int(match.group(1)) if match else None
+        number = numbers[index]
+        if number is not None and paragraphs and quote_last is not None:
+            if number == quote_last + 1:  # the quote keeps counting: still quoted text
+                quote_last = number
+                paragraphs[-1][2].append(text)
+                continue
+            quote_last = None  # numbering broke the quoted run: back to the judgment's own numbering
+        elif (
+            number is not None and paragraphs and 1 < number < expected and not new_opinion_pending
+            and number != (inner_last or 0) + 1 and _quote_resumes_at(numbers, index) == expected
+        ):
+            # A number that repeats or goes back starts a quoted document's own numbering (a judgment quoting a
+            # High Court's ¶13-29) when, after that run, the judgment's numbering resumes where it left off.
+            quote_last = number
+            paragraphs[-1][2].append(text)
+            continue
         if number == 2 and not paragraphs and preamble:
             # Paragraph 1 is often printed without its number ("Leave granted." then "2."): the text before
             # "2." is paragraph 1.
@@ -160,13 +198,17 @@ def _numbered_paragraphs(lines: list[Line]) -> list[ParsedParagraph]:
             paragraphs.append((opinion, number, [match.group(2)] if match.group(2) else []))
             expected += 1
             new_opinion_pending = False
+            inner_last = None
         elif number == 1 and new_opinion_pending:
             opinion += 1
             paragraphs.append((opinion, 1, [match.group(2)] if match.group(2) else []))
             expected = 2
             new_opinion_pending = False
+            inner_last = None
         elif paragraphs:
             paragraphs[-1][2].append(text)
+            if number is not None:
+                inner_last = number
         else:
             preamble.append(text)
     if preamble and paragraphs:

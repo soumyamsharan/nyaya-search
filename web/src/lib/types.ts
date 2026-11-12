@@ -6,10 +6,19 @@ export interface ParagraphRef {
   label: string;
 }
 
+export interface CitationRef {
+  raw: string;
+  judgment_id: string | null;
+  title: string | null;
+  citation: string | null;
+}
+
 export interface Paragraph extends ParagraphRef {
   text: string;
   label_derived: boolean;
   role: Role | null;
+  cites_cases: boolean;
+  references: CitationRef[];
 }
 
 export interface JudgmentSummary {

@@ -18,7 +18,18 @@ _SCR = re.compile(
 _AIR = re.compile(r"AIR\s*(?P<y>(?:19|20)\d{2})\s*SC\s*(?P<p>\d{1,4})")
 _INSC = re.compile(r"(?P<y>(?:19|20)\d{2})\s*INSC\s*(?P<p>\d{1,5})")
 
-_PATTERNS = (("SCCOL", _SCC_ONLINE), ("SCC", _SCC), ("SCR", _SCR), ("AIR", _AIR), ("INSC", _INSC))
+# High Court reports ("AIR 1946 Mad 151", "AIR 1980 Del 12"), Delhi Law Times ("(2000) 84 DLT 337") and common
+# English reports ("(1876) 3 Ch D 637", "[1990] 1 AC 109"). Recognised so they can be linked or shown as text.
+_AIR_HC = re.compile(r"AIR\s*(?P<y>(?:19|20)\d{2})\s*(?P<court>[A-Z][A-Za-z]{1,9})\s*(?P<p>\d{1,4})")
+_DLT = re.compile(r"\((?P<y>(?:19|20)\d{2})\)\s*(?P<v>\d{1,3})\s*DLT\s*(?P<p>\d{1,4})")
+_ENGLISH = re.compile(
+    r"\((?P<y>1[89]\d{2})\)\s*(?P<v>\d{1,2})\s*(?P<court>Ch D|QB|KB|AC|WLR|All ER|Ch|Q\.B\.|A\.C\.)\s*(?P<p>\d{1,4})"
+    r"|\[(?P<y2>(?:19|20)\d{2})\]\s*(?P<v2>\d{1,2})\s*(?P<court2>AC|WLR|All ER|QB|KB|Ch)\s*(?P<p2>\d{1,4})"
+)
+_PATTERNS = (
+    ("SCCOL", _SCC_ONLINE), ("SCC", _SCC), ("SCR", _SCR), ("AIR", _AIR), ("INSC", _INSC),
+    ("AIRHC", _AIR_HC), ("DLT", _DLT), ("ENG", _ENGLISH),
+)
 
 
 @dataclass(frozen=True)
@@ -31,6 +42,15 @@ class Citation:
 
 def _norm(reporter: str, m: re.Match) -> str:
     groups = m.groupdict()
+    if reporter == "AIRHC":
+        return f"AIRHC|{groups['y']}|{groups['court'].upper()}|{groups['p']}"
+    if reporter == "DLT":
+        return f"DLT|{groups['y']}|{groups['v']}|{groups['p']}"
+    if reporter == "ENG":
+        if groups.get("y"):
+            court = groups["court"].replace(".", "").replace(" ", "").upper()
+            return f"ENG|{groups['y']}|{groups['v']}|{court}|{groups['p']}"
+        return f"ENG|{groups['y2']}|{groups['v2']}|{groups['court2'].upper()}|{groups['p2']}"
     supp = ""
     if groups.get("supp"):
         supp = "S" + (groups.get("sn") or "")
@@ -212,3 +232,13 @@ def headnote_paragraph_refs(text: str) -> list[int]:
 
 def approx_tokens(text: str) -> int:
     return max(1, len(text) // 4)
+
+
+_SUPRA = re.compile(r"\((?:supra|Supra)\)|\b(?:supra)\b")
+_SEE_REF = re.compile(r"\[See:[^\]]{3,}\]")
+
+
+def cites_cases(text: str) -> bool:
+    """True when a paragraph refers to an earlier case: a reported citation, a 'X v. Y' name, '(supra)' or a
+    '[See: ...]' reference. Independent of the paragraph role rules."""
+    return bool(extract_citations(text) or find_case_names(text) or _SUPRA.search(text) or _SEE_REF.search(text))

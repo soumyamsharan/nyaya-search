@@ -39,10 +39,21 @@ class ParagraphRef(BaseModel):
     label: str
 
 
+class CitationRef(BaseModel):
+    """A citation found in a paragraph: the text as printed, and the judgment it resolves to (if held)."""
+
+    raw: str
+    judgment_id: str | None = None
+    title: str | None = None
+    citation: str | None = None
+
+
 class Paragraph(ParagraphRef):
     text: str
     label_derived: bool = False
     role: Role | None = None
+    cites_cases: bool = False
+    references: list[CitationRef] = Field(default_factory=list)
 
 
 class JudgmentSummary(BaseModel):
