@@ -353,7 +353,7 @@ class StatuteRepository:
     def provision(self, kind: str, key: str, slug: str) -> Provision | None:
         """Every judgment that refers to this provision (with the referring paragraphs), and paragraphs from other
         judgments that discuss it, nearest in meaning to the first referring paragraph."""
-        from nyaya.provisions import official_search_url, reviewed_description
+        from nyaya.provisions import description_for, official_search_url
 
         rows = self._db.fetch_all(
             """SELECT r.judgment_id, r.seq, r.name, r.number, p.label, p.text
@@ -377,7 +377,7 @@ class StatuteRepository:
         ]
         name, number = rows[0]["name"], rows[0]["number"]
         related = self._related_by_meaning(kind, key, slug, rows, set(by_judgment))
-        description = reviewed_description(key) if kind in ("section", "article") else None
+        description = description_for(key) if kind in ("section", "article") else None
         return Provision(
             kind=kind,
             key=key,
@@ -387,9 +387,7 @@ class StatuteRepository:
             judgments=judgments,
             related=related,
             official_url=official_search_url(name),
-            description=description["text"] if description else None,
-            reviewed_by=description["reviewed_by"] if description else None,
-            reviewed_on=description["reviewed_on"] if description else None,
+            description=description,
         )
 
     def _related_by_meaning(self, kind, key, slug, rows, exclude: set[str]) -> list[RelatedParagraph]:

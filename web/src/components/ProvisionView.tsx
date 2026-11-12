@@ -60,12 +60,7 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
 
       <Section title="What it means">
         {page.description ? (
-          <div className="space-y-1 text-sm text-slate-700">
-            <p>{page.description}</p>
-            <p className="text-xs text-slate-500">
-              Reviewed by {page.reviewed_by} on {page.reviewed_on}.
-            </p>
-          </div>
+          <p className="text-sm text-slate-700">{page.description}</p>
         ) : (
           <p className="text-sm text-slate-600">
             A plain-language description of this provision is not available yet. The judgments below show how the

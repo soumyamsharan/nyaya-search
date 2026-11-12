@@ -281,5 +281,3 @@ class Provision(BaseModel):
     )
     official_url: str
     description: str | None = None
-    reviewed_by: str | None = None
-    reviewed_on: str | None = None

@@ -73,8 +73,6 @@ export interface Provision {
   related: RelatedParagraph[];
   official_url: string;
   description: string | null;
-  reviewed_by: string | null;
-  reviewed_on: string | null;
 }
 
 export interface JudgmentSummary {

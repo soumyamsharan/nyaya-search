@@ -1,4 +1,4 @@
-"""Descriptions and official links for statutes and provisions. Descriptions show only once reviewed."""
+"""Plain-language descriptions and official India Code links for statutes and provisions."""
 
 from functools import lru_cache
 from importlib import resources
@@ -13,12 +13,9 @@ def _descriptions() -> dict:
     return yaml.safe_load(text).get("statutes", {}) or {}
 
 
-def reviewed_description(statute_key: str) -> dict | None:
-    """The description and reviewer for a statute, or None if it has not been reviewed."""
-    entry = _descriptions().get(statute_key) or {}
-    if not entry.get("description") or not entry.get("reviewed_by") or not entry.get("reviewed_on"):
-        return None
-    return {"text": entry["description"], "reviewed_by": entry["reviewed_by"], "reviewed_on": str(entry["reviewed_on"])}
+def description_for(statute_key: str) -> str | None:
+    """The plain-language description of a statute, or None when none has been written."""
+    return (_descriptions().get(statute_key) or {}).get("description") or None
 
 
 def official_search_url(name: str) -> str:

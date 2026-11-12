@@ -28,8 +28,8 @@ automated collection of India Code item identifiers.
 - **WHEN** a user opens any statute page
 - **THEN** a "Find the official text on India Code" link opens India Code's search for that name, in a new window
 
-### Requirement: Descriptions only when reviewed
-A description SHALL appear only for statutes on the curated list, after review by a named reviewer on a stated date.
+### Requirement: Descriptions for curated statutes
+A plain-language description SHALL appear only for statutes on the curated list, and only when one has been written for them.
 
 #### Scenario: Uncurated statute
 - **WHEN** a user opens a statute that is not curated
