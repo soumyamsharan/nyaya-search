@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api } from "@/lib/api";
 import { ROLES, type Role, parseRoles, roleInfo } from "@/lib/roles";
 import { addNote, citedParagraph } from "@/lib/notes";
@@ -138,28 +138,74 @@ function roleCounts(paragraphs: Paragraph[]): Map<Role, number> {
   return counts;
 }
 
+/**
+ * In-page ¶ links jump down the page and add a history entry, but Next.js turns off the browser's scroll
+ * restoration. Remember where each jump started, restore it on Back, and offer a visible way back.
+ */
+function useParagraphJumps() {
+  const jumps = useRef<{ from: number; to: string }[]>([]);
+  const [canReturn, setCanReturn] = useState(false);
+
+  useEffect(() => {
+    // popstate also fires when a # link is followed, so only a move away from the last jump's target is a Back.
+    const onPopState = () => {
+      const last = jumps.current.at(-1);
+      if (!last || window.location.hash === last.to) return;
+      jumps.current.pop();
+      setCanReturn(jumps.current.length > 0);
+      requestAnimationFrame(() => window.scrollTo({ top: last.from }));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function onClickCapture(event: MouseEvent) {
+    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#p-"]');
+    const to = link?.getAttribute("href");
+    if (!to || to === window.location.hash) return; // same target: no new history entry
+    jumps.current.push({ from: window.scrollY, to });
+    setCanReturn(true);
+  }
+
+  return { onClickCapture, canReturn, goBack: () => window.history.back() };
+}
+
+function BackToOrigin({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="fixed bottom-5 right-5 z-20 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-indigo-700"
+    >
+      ↩ Back to where you were
+    </button>
+  );
+}
+
 export default function JudgmentView({ id }: { id: string }) {
   const [judgment, setJudgment] = useState<Judgment | null>(null);
   const [graph, setGraph] = useState<CitationGraph | null>(null);
   const [error, setError] = useState<unknown>(null);
   const hash = useHash();
   const [selectedRoles, toggleRole] = useRoleFilter();
+  const jumps = useParagraphJumps();
 
   useEffect(() => {
     api.judgment(id).then(setJudgment).catch(setError);
     api.citations(id).then(setGraph).catch(() => setGraph(null));
   }, [id]);
 
+  // Opening a link to a paragraph scrolls to it once the text has loaded; later jumps are native anchor links.
   useEffect(() => {
-    if (judgment && hash) document.getElementById(hash.slice(1))?.scrollIntoView();
-  }, [judgment, hash]);
+    if (judgment && window.location.hash) document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+  }, [judgment]);
 
   if (error) return <StatusMessage error={error} />;
   if (!judgment) return <p className="text-sm text-slate-500">Loading judgment…</p>;
 
   const seqByLabel = new Map(judgment.paragraphs.map((p) => [p.label, p.seq]));
   return (
-    <article className="space-y-5">
+    <article className="space-y-5" onClickCapture={jumps.onClickCapture}>
+      {jumps.canReturn ? <BackToOrigin onClick={jumps.goBack} /> : null}
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">{judgment.title}</h1>
         <p className="text-sm text-slate-600">
