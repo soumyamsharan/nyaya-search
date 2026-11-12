@@ -1,7 +1,9 @@
 """Repositories: the only place that knows table layouts. Each returns domain models or plain rows."""
 
 import json
+import re
 from collections.abc import Iterable
+from datetime import date
 
 from nyaya.db import Database
 from nyaya.domain import (
@@ -14,9 +16,17 @@ from nyaya.domain import (
     JudgmentSummary,
     Paragraph,
     ParagraphRef,
+    SectionCount,
+    StatuteIndex,
+    StatuteJudgment,
+    StatuteParagraph,
+    StatuteRef,
+    StatuteSectionPage,
+    StatuteSummary,
     UnresolvedCitation,
 )
 from nyaya.parsing.scr import SECTION_TITLES
+from nyaya.text import find_statute_references
 
 _SUMMARY_COLUMNS = """
     j.id, coalesce(j.case_name, j.title) AS title, j.decision_date, j.bench,
@@ -70,6 +80,11 @@ class JudgmentRepository:
             [judgment_id],
         )
         paragraphs = [Paragraph(**r) for r in rows]
+        for paragraph in paragraphs:
+            paragraph.statutes = [
+                StatuteRef(raw=m.raw, key=m.key, name=m.name, section=m.section)
+                for m in find_statute_references(paragraph.text)
+            ]
         references = self._db.fetch_all(
             """SELECT c.citing_seq, c.raw, c.cited_judgment_id, coalesce(j.case_name, j.title) AS title,
                       coalesce(j.neutral_citation, j.scr_citation) AS citation
@@ -248,3 +263,71 @@ class LlmCallLog:
         columns = ", ".join(fields)
         placeholders = ", ".join(f"%({k})s" for k in fields)
         self._db.execute(f"INSERT INTO llm_calls ({columns}) VALUES ({placeholders})", fields)
+
+
+class StatuteRepository:
+    """Statute browser over judgment_acts (section references) and the paragraph text they came from."""
+
+    def __init__(self, db: Database, judgments: JudgmentRepository) -> None:
+        self._db = db
+        self._judgments = judgments
+
+    def _section_rows(self, section: str | None = None) -> list[dict]:
+        if section is None:
+            return self._db.fetch_all(
+                "SELECT judgment_id, act_display, section FROM judgment_acts WHERE section IS NOT NULL"
+            )
+        return self._db.fetch_all(
+            "SELECT judgment_id, act_display, section FROM judgment_acts WHERE section = %s", [section]
+        )
+
+    def index(self) -> StatuteIndex:
+        from nyaya.text import statute_key
+
+        names: dict[str, dict[str, int]] = {}
+        judgments: dict[str, set[str]] = {}
+        sections: dict[str, dict[str, set[str]]] = {}
+        for row in self._section_rows():
+            key = statute_key(row["act_display"])
+            if key is None:
+                continue
+            names.setdefault(key, {}).setdefault(row["act_display"], 0)
+            names[key][row["act_display"]] += 1
+            judgments.setdefault(key, set()).add(row["judgment_id"])
+            sections.setdefault(key, {}).setdefault(row["section"], set()).add(row["judgment_id"])
+        acts = [
+            StatuteSummary(
+                key=key,
+                name=max(names[key], key=names[key].get).split(",")[0].strip(),
+                judgments=len(judgments[key]),
+                sections=sorted(
+                    (SectionCount(section=sec, judgments=len(ids)) for sec, ids in sections[key].items()),
+                    key=lambda s: (-s.judgments, int(re.match(r"\d+", s.section).group())),
+                ),
+            )
+            for key in judgments
+        ]
+        return StatuteIndex(acts=sorted(acts, key=lambda a: (-a.judgments, a.name)))
+
+    def section(self, key: str, section: str):
+        from nyaya.text import statute_key
+
+        ids: set[str] = set()
+        names: dict[str, int] = {}
+        for row in self._section_rows(section):
+            if statute_key(row["act_display"]) == key:
+                ids.add(row["judgment_id"])
+                names[row["act_display"]] = names.get(row["act_display"], 0) + 1
+        if not ids:
+            return None
+        name = max(names, key=names.get).split(",")[0].strip()
+        found = []
+        for judgment_id, summary in self._judgments.summaries(ids).items():
+            hits = []
+            for paragraph in self._judgments.paragraphs(judgment_id):
+                if any(m.key == key and m.section == section for m in find_statute_references(paragraph.text)):
+                    hits.append(StatuteParagraph(label=paragraph.label, text=paragraph.text))
+            if hits:
+                found.append(StatuteJudgment(judgment=summary, paragraphs=hits))
+        found.sort(key=lambda j: j.judgment.decision_date or date.min, reverse=True)
+        return StatuteSectionPage(key=key, name=name, section=section, judgments=found)

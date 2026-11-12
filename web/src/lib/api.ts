@@ -1,4 +1,14 @@
-import type { Answer, Breakdown, CitationGraph, JudgeCount, Judgment, SearchFilters, SearchResponse } from "./types";
+import type {
+  Answer,
+  Breakdown,
+  CitationGraph,
+  JudgeCount,
+  Judgment,
+  SearchFilters,
+  SearchResponse,
+  StatuteIndex,
+  StatuteSectionPage,
+} from "./types";
 
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
@@ -55,6 +65,9 @@ export const api = {
     return request(`/v1/search?${searchParams(q, filters)}`);
   },
   judges: () => request<{ judges: JudgeCount[] }>("/v1/judges").then((r) => r.judges),
+  statutes: () => request<StatuteIndex>("/v1/statutes"),
+  statuteSection: (key: string, section: string) =>
+    request<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`),
   judgment: (id: string) => request<Judgment>(`/v1/judgments/${enc(id)}`),
   breakdown: (id: string) => request<Breakdown>(`/v1/judgments/${enc(id)}/breakdown`),
   citations: (id: string) => request<CitationGraph>(`/v1/judgments/${enc(id)}/citations`),

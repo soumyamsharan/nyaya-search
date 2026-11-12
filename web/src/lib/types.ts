@@ -13,12 +13,38 @@ export interface CitationRef {
   citation: string | null;
 }
 
+export interface StatuteRef {
+  raw: string;
+  key: string;
+  name: string;
+  section: string;
+}
+
 export interface Paragraph extends ParagraphRef {
   text: string;
   label_derived: boolean;
   role: Role | null;
   cites_cases: boolean;
   references: CitationRef[];
+  statutes: StatuteRef[];
+}
+
+export interface StatuteSummary {
+  key: string;
+  name: string;
+  judgments: number;
+  sections: { section: string; judgments: number }[];
+}
+
+export interface StatuteIndex {
+  acts: StatuteSummary[];
+}
+
+export interface StatuteSectionPage {
+  key: string;
+  name: string;
+  section: string;
+  judgments: { judgment: JudgmentSummary; paragraphs: { label: string; text: string }[] }[];
 }
 
 export interface JudgmentSummary {

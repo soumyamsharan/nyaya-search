@@ -14,9 +14,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-            <Link href="/" className="text-lg font-semibold text-indigo-700">
-              Nyaya Search
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-lg font-semibold text-indigo-700">
+                Nyaya Search
+              </Link>
+              <Link href="/statutes" className="text-sm text-slate-600 hover:text-indigo-700">
+                Statutes
+              </Link>
+            </div>
             <NotesBar />
           </div>
         </header>

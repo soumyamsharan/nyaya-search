@@ -10,7 +10,7 @@ from nyaya.grounding import GroundingFilter
 from nyaya.llm import GuardedLlm, OpenAICompatibleClient
 from nyaya.ml import Reranker, build_embedder, build_reranker
 from nyaya.reading import BreakdownService, QuestionService
-from nyaya.repos import BreakdownCache, CitationRepository, JudgmentRepository, LlmCallLog
+from nyaya.repos import BreakdownCache, CitationRepository, JudgmentRepository, LlmCallLog, StatuteRepository
 from nyaya.search import Bm25Retriever, HybridRetriever, SearchService, VectorRetriever
 from nyaya.spelling import SpellingCorrector
 
@@ -20,6 +20,7 @@ class Services:
     db: Database
     judgments: JudgmentRepository
     citations: CitationRepository
+    statutes: StatuteRepository
     search: SearchService
     breakdowns: BreakdownService
     questions: QuestionService
@@ -32,6 +33,7 @@ def build_services(settings: Settings, reranker: Reranker | None = None) -> Serv
     db = Database(settings.database_dsn)
     judgments = JudgmentRepository(db)
     citations = CitationRepository(db, judgments)
+    statutes = StatuteRepository(db, judgments)
     embedder = build_embedder(settings)
     reranker = reranker or build_reranker(settings)
 
@@ -63,6 +65,7 @@ def build_services(settings: Settings, reranker: Reranker | None = None) -> Serv
         db=db,
         judgments=judgments,
         citations=citations,
+        statutes=statutes,
         search=search,
         breakdowns=BreakdownService(judgments, BreakdownCache(db), llm, grounding, settings.llm_context_tokens),
         questions=QuestionService(judgments, search, llm, grounding),

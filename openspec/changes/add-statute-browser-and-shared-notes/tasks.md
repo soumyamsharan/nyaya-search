@@ -1,9 +1,9 @@
 ## 1. Statute browser
-- [ ] 1.1 Index and section API endpoints over `judgment_acts`, with exact section matching
-- [ ] 1.2 Referring paragraph lookup for each section result
-- [ ] 1.3 Statute index and section pages on the web
-- [ ] 1.4 Link section mentions in judgment text to their statute page
-- [ ] 1.5 Tests: exact section matching (138 vs 1380), empty section, same-sentence rule
+- [x] 1.1 Index and section API endpoints over `judgment_acts`, with exact section matching
+- [x] 1.2 Referring paragraph lookup for each section result
+- [x] 1.3 Statute index and section pages on the web
+- [x] 1.4 Link section mentions in judgment text to their statute page
+- [x] 1.5 Tests: exact section matching (138 vs 1380), empty section, same-sentence rule
 
 ## 2. Shared research notes
 - [ ] 2.1 `shared_notes` migration; create, read and revoke endpoints; ids are random UUIDs

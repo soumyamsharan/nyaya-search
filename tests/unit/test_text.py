@@ -4,12 +4,14 @@ from nyaya.text import (
     extract_citations,
     find_case_names,
     find_section_references,
+    find_statute_references,
     has_overruling_language,
     headnote_paragraph_refs,
     is_citation_query,
     normalize_act,
     normalize_citation,
     parse_query,
+    statute_key,
 )
 
 
@@ -130,3 +132,25 @@ def test_spelling_variants_never_touch_phrases_or_required_terms():
     assert phrase.phrases == ["normalisation of marks"] and "normalization" not in phrase.free_text
     required = parse_query("normalisation AND marks")
     assert required.required == ["normalisation", "marks"] and "normalization" not in required.free_text
+
+
+@pytest.mark.parametrize(
+    ("name", "key"),
+    [
+        ("Indian Penal Code 1860", "penal-code"),
+        ("Penal Code", "penal-code"),
+        ("Negotiable Instruments Act, 1881", "negotiable-instruments-act"),
+        ("Code of Criminal Procedure, 1973", "code-of-criminal-procedure"),
+        ("act", None),
+        ("Code", None),
+    ],
+)
+def test_statute_keys_group_variants_and_drop_generic_words(name, key):
+    assert statute_key(name) == key
+
+
+def test_statute_mentions_are_exact_about_section_numbers():
+    text = "A complaint under Section 138 of the Negotiable Instruments Act, 1881 was filed; Section 1380 is unrelated."
+    mentions = find_statute_references(text)
+    assert [(m.key, m.section) for m in mentions] == [("negotiable-instruments-act", "138")]
+    assert mentions[0].raw == "Section 138 of the Negotiable Instruments Act, 1881"

@@ -259,3 +259,36 @@ def cites_cases(text: str) -> bool:
     """True when a paragraph refers to an earlier case: a reported citation, a 'X v. Y' name, '(supra)' or a
     '[See: ...]' reference. Independent of the paragraph role rules."""
     return bool(extract_citations(text) or find_case_names(text) or _SUPRA.search(text) or _SEE_REF.search(text))
+
+
+# --- Statute references ----------------------------------------------------------------------------
+
+_GENERIC_ACTS = {"act", "code", "rules", "regulations"}
+_YEAR_SUFFIX = re.compile(r",?\s*\b(?:18|19|20)\d{2}\b.*$")
+
+
+def statute_key(name: str) -> str | None:
+    """Canonical URL key for an Act: 'Indian Penal Code 1860' -> 'penal-code'; None for generic words."""
+    cleaned = _YEAR_SUFFIX.sub("", name.lower()).replace(",", " ")
+    words = [w for w in re.sub(r"[^a-z ]+", " ", cleaned).split() if w not in ("the", "indian")]
+    if not words or " ".join(words) in _GENERIC_ACTS:
+        return None
+    return "-".join(words)
+
+
+@dataclass(frozen=True)
+class StatuteMention:
+    raw: str  # the text as printed, e.g. "Section 138 of the Negotiable Instruments Act, 1881"
+    key: str
+    name: str  # the Act as printed, without the year
+    section: str
+
+
+def find_statute_references(text: str) -> list[StatuteMention]:
+    mentions = []
+    for m in _SECTION_OF_ACT.finditer(text):
+        act = m.group("act").strip(" ,.")
+        key = statute_key(act)
+        if key:
+            mentions.append(StatuteMention(m.group(0), key, _YEAR_SUFFIX.sub("", act).strip(" ,"), m.group("sec")))
+    return mentions

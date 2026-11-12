@@ -6,7 +6,7 @@ import { type MouseEvent, type ReactNode, useEffect, useRef, useState, useSyncEx
 import { api } from "@/lib/api";
 import { ROLES, type Role, parseRoles, roleInfo } from "@/lib/roles";
 import { addNote, citedParagraph } from "@/lib/notes";
-import type { CitationGraph, CitationRef, Judgment, Paragraph } from "@/lib/types";
+import type { CitationGraph, CitationRef, Judgment, Paragraph, StatuteRef } from "@/lib/types";
 import { BreakdownPanel, CitationsPanel, QuestionPanel } from "./JudgmentPanels";
 import { Notice, Section, StatusMessage, formatDate } from "./ui";
 
@@ -69,41 +69,65 @@ function useCitesFilter(): [boolean, (on: boolean) => void] {
   return [on, set];
 }
 
+/** One highlighted span inside a paragraph: a case citation, or a section of an Act. */
+interface Span {
+  raw: string;
+  href: string | null;
+  title: string;
+  tone: string;
+}
+
 /**
- * Paragraph text with each citation highlighted: a link when that judgment is in the corpus, otherwise a hint
- * that it isn't. Matches the citation text as printed, in order.
+ * Paragraph text with each citation and statute section highlighted: a link when the target is in the corpus,
+ * otherwise a hint. Matches the text as printed, in order.
  */
-function AnnotatedText({ text, references }: { text: string; references: CitationRef[] }) {
-  if (!references.length) return <>{text}</>;
+function AnnotatedText({
+  text,
+  references,
+  statutes,
+}: {
+  text: string;
+  references: CitationRef[];
+  statutes: StatuteRef[];
+}) {
+  const spans: Span[] = [
+    ...references.map((ref) => ({
+      raw: ref.raw,
+      href: ref.judgment_id ? `/judgments/${ref.judgment_id}` : null,
+      title: ref.judgment_id
+        ? `${ref.title ?? ""}${ref.citation ? `, ${ref.citation}` : ""}`
+        : "This case is not in the Nyaya Search corpus",
+      tone: ref.judgment_id
+        ? "rounded bg-yellow-100 px-0.5 text-indigo-800 underline decoration-dotted hover:bg-yellow-200"
+        : "rounded bg-slate-100 px-0.5 text-slate-600",
+    })),
+    ...statutes.map((st) => ({
+      raw: st.raw,
+      href: `/statutes/${st.key}/sections/${st.section}`,
+      title: `All judgments that interpret Section ${st.section} of ${st.name}`,
+      tone: "rounded bg-emerald-50 px-0.5 text-emerald-800 underline decoration-dotted hover:bg-emerald-100",
+    })),
+  ];
+  if (!spans.length) return <>{text}</>;
   const nodes: ReactNode[] = [];
   let rest = text;
   let key = 0;
-  for (const ref of references) {
-    const at = rest.indexOf(ref.raw);
+  for (const span of spans) {
+    const at = rest.indexOf(span.raw);
     if (at < 0) continue;
     nodes.push(rest.slice(0, at));
-    const label = ref.raw;
     nodes.push(
-      ref.judgment_id ? (
-        <Link
-          key={key++}
-          href={`/judgments/${ref.judgment_id}`}
-          title={`${ref.title ?? ""}${ref.citation ? `, ${ref.citation}` : ""}`}
-          className="rounded bg-yellow-100 px-0.5 text-indigo-800 underline decoration-dotted hover:bg-yellow-200"
-        >
-          {label}
+      span.href ? (
+        <Link key={key++} href={span.href} title={span.title} className={span.tone}>
+          {span.raw}
         </Link>
       ) : (
-        <span
-          key={key++}
-          title="This case is not in the Nyaya Search corpus"
-          className="rounded bg-slate-100 px-0.5 text-slate-600"
-        >
-          {label}
+        <span key={key++} title={span.title} className={span.tone}>
+          {span.raw}
         </span>
       ),
     );
-    rest = rest.slice(at + ref.raw.length);
+    rest = rest.slice(at + span.raw.length);
   }
   nodes.push(rest);
   return <>{nodes}</>;
@@ -172,7 +196,11 @@ function ParagraphItem({ judgment, paragraph, highlighted }: { judgment: Judgmen
         <div className="flex-1">
           <RoleTag role={paragraph.role} />
           <p className="text-sm leading-relaxed text-slate-800">
-            <AnnotatedText text={paragraph.text} references={paragraph.references ?? []} />
+            <AnnotatedText
+              text={paragraph.text}
+              references={paragraph.references ?? []}
+              statutes={paragraph.statutes ?? []}
+            />
           </p>
         </div>
       </div>

@@ -48,12 +48,22 @@ class CitationRef(BaseModel):
     citation: str | None = None
 
 
+class StatuteRef(BaseModel):
+    """A section of an Act mentioned in a paragraph, linked to its statute page."""
+
+    raw: str
+    key: str
+    name: str
+    section: str
+
+
 class Paragraph(ParagraphRef):
     text: str
     label_derived: bool = False
     role: Role | None = None
     cites_cases: bool = False
     references: list[CitationRef] = Field(default_factory=list)
+    statutes: list[StatuteRef] = Field(default_factory=list)
 
 
 class JudgmentSummary(BaseModel):
@@ -166,3 +176,36 @@ class CitationGraph(BaseModel):
     cited_by: list[CitationLink]
     unresolved: list[UnresolvedCitation]
     overruling_evidence: list[CitationLink]
+
+
+class SectionCount(BaseModel):
+    section: str
+    judgments: int
+
+
+class StatuteSummary(BaseModel):
+    key: str
+    name: str
+    judgments: int
+    sections: list[SectionCount]
+
+
+class StatuteIndex(BaseModel):
+    acts: list[StatuteSummary]
+
+
+class StatuteParagraph(BaseModel):
+    label: str
+    text: str
+
+
+class StatuteJudgment(BaseModel):
+    judgment: JudgmentSummary
+    paragraphs: list[StatuteParagraph]
+
+
+class StatuteSectionPage(BaseModel):
+    key: str
+    name: str
+    section: str
+    judgments: list[StatuteJudgment]
