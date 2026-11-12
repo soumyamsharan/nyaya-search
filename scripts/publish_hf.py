@@ -19,7 +19,7 @@ DATASET = "nyaya-search-db"
 SPACE = "nyaya-search-api"
 DUMP_NAME = "nyaya.dump"
 LOCAL_DUMP = ROOT / "data" / "backups" / DUMP_NAME
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "openai/gpt-oss-20b"  # Groq production model available to regular accounts
 
 
 def dump_url(user: str) -> str:

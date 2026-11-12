@@ -8,7 +8,7 @@ from nyaya.repos import BreakdownCache, JudgmentRepository
 from nyaya.search import SearchService
 from nyaya.text import approx_tokens, headnote_paragraph_refs, parse_query
 
-BREAKDOWN_PROMPT_VERSION = "breakdown-v1"
+BREAKDOWN_PROMPT_VERSION = "breakdown-v3"
 QA_PROMPT_VERSION = "qa-v1"
 QA_CONTEXT_PARAGRAPHS = 8
 QA_EDGE_PARAGRAPHS = 2  # opening and closing paragraphs usually state the issue and the decision
@@ -23,9 +23,17 @@ _RULES = (
     "the numbers of the paragraphs that support it (the number inside [P...]). Reply with JSON only."
 )
 BREAKDOWN_SYSTEM = (
-    "You write headnote-style breakdowns of Indian Supreme Court judgments for lawyers. " + _RULES + ' Format: '
-    '{"facts": [{"text": "...", "paras": [3]}], "issues": [...], "held": [...], "ratio": [...]}. '
-    "At most 4 short sentences per section."
+    "You write headnote-style breakdowns of Indian Supreme Court judgments for lawyers. " + _RULES + " "
+    "Fill ALL four sections, each with 1 to 4 short sentences: "
+    "facts = what happened and how the case reached this Court; "
+    "issues = the legal questions the Court had to decide; "
+    "held = what the Court decided and the orders it passed; "
+    "ratio = the legal principle the decision rests on. "
+    "For each sentence, \"paras\" lists 1 to 3 paragraph numbers copied from the [P<number>] tags above the "
+    "paragraphs that state it. Never cite a number that has no [P<number>] tag in the text, and never cite ranges. "
+    "Leave a section empty only if the paragraphs truly say nothing about it. Format (numbers are placeholders): "
+    '{"facts": [{"text": "...", "paras": [1]}], "issues": [{"text": "...", "paras": [1]}], '
+    '"held": [{"text": "...", "paras": [1]}], "ratio": [{"text": "...", "paras": [1]}]}'
 )
 QA_SYSTEM = (
     "You answer a lawyer's question about one Indian Supreme Court judgment. " + _RULES + " If the paragraphs "

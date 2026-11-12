@@ -37,13 +37,11 @@ COPY --chmod=755 start.sh /app/start.sh
 
 USER user
 
-# Models: downloaded once at build time, then the reranker is exported to int8 ONNX for CPU.
+# Models: downloaded once at build time. The reranker runs in PyTorch on CPU: exporting it to ONNX needs more
+# memory than the Space builder has.
 RUN python3.12 -c "from huggingface_hub import snapshot_download as d; \
 d('BAAI/bge-m3', ignore_patterns=['onnx/*', 'imgs/*', '*.onnx', 'colbert_linear.pt', 'sparse_linear.pt']); \
 d('BAAI/bge-reranker-v2-m3', ignore_patterns=['*.onnx'])"
-RUN python3.12 -c "from nyaya.config import Settings; from nyaya.ml import build_reranker; \
-build_reranker(Settings(_env_file=None, database_url='unused', reranker_backend='onnx-int8', rerank_depth=10, \
-rerank_max_tokens=192, models_dir='/models'))"
 
 # Database: restore the published dump into a data directory owned by the runtime user.
 # File-backed shared memory: container /dev/shm is too small for HNSW index builds.
@@ -64,7 +62,7 @@ RUN python3.12 -c "import sys, urllib.request; urllib.request.urlretrieve(sys.ar
 ENV DATABASE_URL=postgresql://nyaya@127.0.0.1:5432/nyaya \
     PORT=7860 \
     MODEL_DEVICE=cpu \
-    RERANKER_BACKEND=onnx-int8 \
+    RERANKER_BACKEND=torch \
     RERANK_DEPTH=10 \
     RERANK_MAX_TOKENS=192 \
     TRUSTED_PROXY_IPS=* \
