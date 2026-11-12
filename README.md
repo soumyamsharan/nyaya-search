@@ -144,18 +144,20 @@ uv run evals --api-url https://soumyamsharan-nyaya-search-api.hf.space   # again
 
 | Search setup | Recall@10 | MRR | p95 latency |
 |---|---|---|---|
-Measured on 21 valid queries (local services, reranker at depth 50 and 512 tokens; the live backend uses depth 5 at 128 tokens):
+Measured on 21 valid queries with local services (reranker at depth 50 and 512 tokens; the live backend uses depth 5 at
+128 tokens). Latest run, with British/American spelling variants in the query parser:
 
 | Search setup | Recall@10 | MRR | p95 latency (local) |
 |---|---|---|---|
-| Keyword (BM25) | 0.952 | 0.865 | 45 ms |
-| Semantic (BGE-M3) | 0.905 | 0.683 | 153 ms |
-| Hybrid (BM25 + semantic) | **1.000** | 0.786 | 95 ms |
-| Hybrid + reranker | 0.905 | 0.699 | 3,902 ms |
+| Keyword (BM25) | 0.952 | 0.865 | 46 ms |
+| Semantic (BGE-M3) | 0.905 | 0.706 | 76 ms |
+| **Hybrid (BM25 + semantic)** | **1.000** | **0.826** | 105 ms |
+| Hybrid + reranker | 0.952 | 0.747 | 3,991 ms |
 
-The runner exits with an error if hybrid + reranker scores below keyword search, and this run did: the gate **failed**.
-Hybrid alone finds every expected judgment, while the reranker drops two queries that hybrid found. Results are saved
-to `evals/results/`.
+Before the spelling change, hybrid scored 1.000 / 0.786 and the reranker 0.905 / 0.699, and the gate failed. The
+spelling change fixed the `exam-normalisation` query. Hybrid is the strongest setup on this set, and the reranker's
+extra cost has not yet shown a gain. The runner exits with an error if hybrid + reranker scores below keyword search;
+the gate passes now. Results are saved to `evals/results/`.
 
 Quality checks done so far: paragraph role labels were spot-checked on 40 random paragraphs per round (about 72%
 correct; facts, reasoning and conclusions are most reliable); the int8 reranker keeps scores correlated at 0.986
