@@ -156,3 +156,12 @@ export interface SharedNote {
   expires_at: string;
   items: { judgment: JudgmentSummary | null; label: string; text: string | null }[];
 }
+
+export interface StatuteActPage {
+  key: string;
+  name: string;
+  judgments_total: number;
+  page: number;
+  per_page: number;
+  judgments: { judgment: JudgmentSummary; sections: string[] }[];
+}

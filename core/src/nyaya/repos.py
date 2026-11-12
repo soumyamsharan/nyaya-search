@@ -7,6 +7,7 @@ from datetime import date
 
 from nyaya.db import Database
 from nyaya.domain import (
+    ActJudgment,
     CitationGraph,
     CitationLink,
     CitationRef,
@@ -17,6 +18,7 @@ from nyaya.domain import (
     Paragraph,
     ParagraphRef,
     SectionCount,
+    StatuteActPage,
     StatuteIndex,
     StatuteJudgment,
     StatuteParagraph,
@@ -309,6 +311,42 @@ class StatuteRepository:
         ]
         return StatuteIndex(acts=sorted(acts, key=lambda a: (-a.judgments, a.name)))
 
+    def act_judgments_raw(self, key: str) -> dict:
+        """judgment id -> sections of this Act it refers to; and the Act names as printed."""
+        from nyaya.text import statute_key
+
+        found: dict[str, set[str]] = {}
+        names: dict[str, int] = {}
+        for row in self._section_rows():
+            if statute_key(row["act_display"]) == key:
+                found.setdefault(row["judgment_id"], set()).add(row["section"])
+                names[row["act_display"]] = names.get(row["act_display"], 0) + 1
+        return {"found": found, "names": names}
+
+    def act_page(self, key: str, page: int, per_page: int) -> StatuteActPage | None:
+        data = self.act_judgments_raw(key)
+        found, names = data["found"], data["names"]
+        if not found:
+            return None
+        summaries = self._judgments.summaries(found.keys())
+        ordered = sorted(found, key=lambda j: summaries[j].decision_date or date.min, reverse=True)
+        chosen = ordered[(page - 1) * per_page : page * per_page]
+        name = max(names, key=names.get).split(",")[0].strip()
+        return StatuteActPage(
+            key=key,
+            name=name,
+            judgments_total=len(ordered),
+            page=page,
+            per_page=per_page,
+            judgments=[
+                ActJudgment(
+                    judgment=summaries[j],
+                    sections=sorted(found[j], key=lambda s: int(re.match(r"\d+", s).group())),
+                )
+                for j in chosen
+            ],
+        )
+
     def section(self, key: str, section: str):
         from nyaya.text import statute_key
 
@@ -331,3 +369,4 @@ class StatuteRepository:
                 found.append(StatuteJudgment(judgment=summary, paragraphs=hits))
         found.sort(key=lambda j: j.judgment.decision_date or date.min, reverse=True)
         return StatuteSectionPage(key=key, name=name, section=section, judgments=found)
+

@@ -1,9 +1,9 @@
 ## 0. Blocked: source confirmation
-- [ ] 0.1 Confirm India Code's URL format for an Act and its terms of use for linking (the browser could not open the site)
+- [x] 0.1 Confirm India Code's URL format and linking terms: /handle/123456789/<id> redirects to the Act's item page; the policy allows direct links with notification, a new window, no framing, and no endorsement implied. Prohibits automated scraping.
 
 ## 1. Act page
-- [ ] 1.1 `GET /v1/statutes/{key}` with pagination and per-judgment section lists; tests
-- [ ] 1.2 Act page and links from Act names in the index, section pages and judgment text
+- [x] 1.1 `GET /v1/statutes/{key}` with pagination and per-judgment section lists; tests
+- [x] 1.2 Act page and links from Act names in the index, section pages and judgment text
 
 ## 2. About this Act
 - [ ] 2.1 `acts.yaml` for the top ~30 Acts: description, reviewer, review date, official URL

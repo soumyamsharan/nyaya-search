@@ -240,3 +240,17 @@ class SharedNote(BaseModel):
 
 class NoteRenewed(BaseModel):
     expires_at: datetime
+
+
+class ActJudgment(BaseModel):
+    judgment: JudgmentSummary
+    sections: list[str] = Field(description="Sections of this Act that the judgment refers to")
+
+
+class StatuteActPage(BaseModel):
+    key: str
+    name: str
+    judgments_total: int
+    page: int
+    per_page: int
+    judgments: list[ActJudgment]

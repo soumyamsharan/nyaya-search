@@ -16,6 +16,7 @@ from nyaya.domain import (
     NoteRenewed,
     SearchResponse,
     SharedNote,
+    StatuteActPage,
     StatuteIndex,
     StatuteSectionPage,
 )
@@ -65,6 +66,19 @@ def list_judges(svc: ServicesDep) -> JudgeList:
 def list_statutes(svc: ServicesDep) -> StatuteIndex:
     """Acts referred to in the judgments, with the sections referred to and how many judgments refer to each."""
     return svc.statutes.index()
+
+
+@v1.get("/statutes/{key}", response_model=StatuteActPage, tags=["statutes"])
+def get_statute_act(
+    key: Annotated[str, Path(pattern=r"^[a-z0-9-]{3,80}$")],
+    svc: ServicesDep,
+    page: Annotated[int, Query(ge=1, le=1000)] = 1,
+) -> StatuteActPage:
+    """Every judgment that refers to any section of this Act, newest first, 25 per page."""
+    result = svc.statutes.act_page(key, page, 25)
+    if result is None:
+        raise NotFoundError("no judgments refer to this Act")
+    return result
 
 
 @v1.get("/statutes/{key}/sections/{section}", response_model=StatuteSectionPage, tags=["statutes"])

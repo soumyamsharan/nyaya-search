@@ -31,7 +31,8 @@ def publish_db(api: HfApi, user: str) -> None:
     LOCAL_DUMP.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["docker", "compose", "exec", "-T", "db", "pg_dump", "-U", "nyaya", "-d", "nyaya", "-Fc",
-         "--exclude-table-data=llm_calls", "--exclude-table-data=ingest_runs", "--exclude-table-data=shared_notes", "-f", f"/backups/{DUMP_NAME}"],
+         "--exclude-table-data=llm_calls", "--exclude-table-data=ingest_runs",
+         "--exclude-table-data=shared_notes", "-f", f"/backups/{DUMP_NAME}"],
         cwd=ROOT,
         check=True,
     )

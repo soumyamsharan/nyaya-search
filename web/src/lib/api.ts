@@ -6,6 +6,7 @@ import type {
   Judgment,
   SearchFilters,
   SearchResponse,
+  StatuteActPage,
   StatuteIndex,
   NoteCreated,
   NoteRenewed,
@@ -77,6 +78,7 @@ export const api = {
     request<NoteRenewed>(`/v1/notes/${enc(id)}/renewal`, { method: "POST", headers: { "X-Note-Token": token } }),
   revokeNote: (id: string, token: string) =>
     request<void>(`/v1/notes/${enc(id)}`, { method: "DELETE", headers: { "X-Note-Token": token } }),
+  statuteAct: (key: string, page: number) => request<StatuteActPage>(`/v1/statutes/${enc(key)}?page=${page}`),
   statuteSection: (key: string, section: string) =>
     request<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`),
   judgment: (id: string) => request<Judgment>(`/v1/judgments/${enc(id)}`),
