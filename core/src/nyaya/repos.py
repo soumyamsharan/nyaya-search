@@ -8,6 +8,7 @@ from nyaya.domain import (
     CitationGraph,
     CitationLink,
     FrontMatterSection,
+    JudgeCount,
     Judgment,
     JudgmentSummary,
     Paragraph,
@@ -106,6 +107,19 @@ class JudgmentRepository:
             paragraphs=paragraphs,
             numbering_derived=any(p.label_derived for p in paragraphs),
         )
+
+    def judges(self) -> list[JudgeCount]:
+        # The dataset spells names inconsistently ("J.B. Pardiwala", "J B Pardiwala"): group by letters only and
+        # show the most common spelling.
+        rows = self._db.fetch_all(
+            """SELECT name, judgments FROM (
+                   SELECT mode() WITHIN GROUP (ORDER BY b) AS name, count(*) AS judgments
+                   FROM judgments j, unnest(j.bench) b
+                   WHERE j.status = 'ok'
+                   GROUP BY regexp_replace(lower(b), '[^a-z]', '', 'g')
+               ) names ORDER BY name COLLATE "C" """
+        )
+        return [JudgeCount(**r) for r in rows]
 
     def exists(self, judgment_id: str) -> bool:
         return self._db.fetch_one(

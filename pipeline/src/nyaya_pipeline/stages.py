@@ -344,3 +344,19 @@ def roles(db: Database) -> RunReport:
     report.counts["processed"] = len(rows)
     report.counts["changed"] = len(changes)
     return report
+
+
+def vocabulary(db: Database) -> RunReport:
+    """Rebuild the corpus word list (lower-case words of 3-30 letters seen at least twice) for spelling help."""
+    report = RunReport("vocabulary")
+    with db.connection() as conn, conn.transaction():
+        conn.execute("DELETE FROM vocabulary")
+        conn.execute(
+            r"""INSERT INTO vocabulary (word, freq)
+                SELECT w, count(*) FROM paragraphs p JOIN judgments j ON j.id = p.judgment_id,
+                     regexp_split_to_table(lower(p.text), '[^a-z]+') AS w
+                WHERE j.status = 'ok' AND length(w) BETWEEN 3 AND 30
+                GROUP BY w HAVING count(*) >= 2"""
+        )
+        report.counts["processed"] = conn.execute("SELECT count(*) AS n FROM vocabulary").fetchone()["n"]
+    return report

@@ -105,6 +105,16 @@ class SearchResponse(BaseModel):
     query_type: str  # fact_pattern | citation
     results: list[SearchResult]
     message: str | None = None
+    suggestion: str | None = Field(default=None, description="Corrected query when words look misspelled")
+
+
+class JudgeCount(BaseModel):
+    name: str
+    judgments: int
+
+
+class JudgeList(BaseModel):
+    judges: list[JudgeCount]
 
 
 class CitedSentence(BaseModel):

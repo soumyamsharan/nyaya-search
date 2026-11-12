@@ -7,6 +7,7 @@ from nyaya.domain import (
     Answer,
     Breakdown,
     CitationGraph,
+    JudgeCount,
     Judgment,
     JudgmentSummary,
     Paragraph,
@@ -153,6 +154,9 @@ class FakeServices:
                 return outer.search_response or SearchResponse(query_type="fact_pattern", results=[])
 
         class _Judgments:
+            def judges(self):
+                return [JudgeCount(name="J.B. Pardiwala", judgments=12)]
+
             def get(self, judgment_id):
                 return outer.judgment if outer.judgment and outer.judgment.id == judgment_id else None
 

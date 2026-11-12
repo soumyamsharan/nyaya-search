@@ -49,6 +49,12 @@ export interface SearchResponse {
   query_type: "fact_pattern" | "citation";
   results: SearchResult[];
   message: string | null;
+  suggestion: string | null;
+}
+
+export interface JudgeCount {
+  name: string;
+  judgments: number;
 }
 
 export interface CitedSentence {

@@ -78,12 +78,20 @@ def roles_stage() -> None:
     _finish(db, stages.roles(db))
 
 
+@app.command(name="vocabulary")
+def vocabulary_stage() -> None:
+    """Rebuild the corpus word list used for spelling suggestions."""
+    db = _db()
+    _finish(db, stages.vocabulary(db))
+
+
 @app.command(name="all")
 def run_all(year: Years = None) -> None:
-    """migrate -> sync -> extract -> roles -> index -> citations."""
+    """migrate -> sync -> extract -> roles -> vocabulary -> index -> citations."""
     migrate()
     sync(year)
     extract()
     roles_stage()
+    vocabulary_stage()
     index()
     citations()

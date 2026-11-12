@@ -142,6 +142,7 @@ class ParsedQuery:
     phrases: list[str] = field(default_factory=list)
     required: list[str] = field(default_factory=list)
     excluded: list[str] = field(default_factory=list)
+    fuzzy: bool = False  # keyword matching tolerates one-letter typos (set when the query has unknown words)
 
     @property
     def is_empty(self) -> bool:

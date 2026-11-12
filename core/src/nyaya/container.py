@@ -12,6 +12,7 @@ from nyaya.ml import Reranker, build_embedder, build_reranker
 from nyaya.reading import BreakdownService, QuestionService
 from nyaya.repos import BreakdownCache, CitationRepository, JudgmentRepository, LlmCallLog
 from nyaya.search import Bm25Retriever, HybridRetriever, SearchService, VectorRetriever
+from nyaya.spelling import SpellingCorrector
 
 
 @dataclass
@@ -45,6 +46,7 @@ def build_services(settings: Settings, reranker: Reranker | None = None) -> Serv
         relevance_threshold=settings.relevance_threshold,
         result_limit=settings.result_limit,
         candidate_limit=settings.candidate_limit,
+        spelling=SpellingCorrector(db),
     )
 
     llm = GuardedLlm(

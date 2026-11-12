@@ -134,3 +134,8 @@ def test_new_search_parameters_reach_the_service():
 def test_invalid_new_filters_are_422(client, params):
     response = client.get("/v1/search", params=params)
     assert response.status_code == 422 and response.json()["error"]["code"] == "invalid_request"
+
+
+def test_judge_list(client):
+    body = client.get("/v1/judges").json()
+    assert body == {"judges": [{"name": "J.B. Pardiwala", "judgments": 12}]}

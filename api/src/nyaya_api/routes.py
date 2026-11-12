@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request, Response
 
 from nyaya.container import Services
-from nyaya.domain import Answer, Breakdown, CitationGraph, Judgment, SearchResponse
+from nyaya.domain import Answer, Breakdown, CitationGraph, JudgeList, Judgment, SearchResponse
 from nyaya.errors import NotFoundError
 from nyaya_api.ratelimit import enforce_rate_limit
 from nyaya_api.schemas import ErrorResponse, Health, JudgmentId, QuestionRequest, SearchParams
@@ -39,6 +39,12 @@ def search(params: Annotated[SearchParams, Query()], svc: ServicesDep, response:
     """Fact-pattern, phrase or citation search. Returns up to 10 judgments with the matching paragraph."""
     response.headers.update(NO_STORE)
     return svc.search.search(params.q, params.filters(), params.mode)
+
+
+@v1.get("/judges", response_model=JudgeList, tags=["search"])
+def list_judges(svc: ServicesDep) -> JudgeList:
+    """Every judge on a bench in the corpus, with judgment counts (for name suggestions)."""
+    return JudgeList(judges=svc.judgments.judges())
 
 
 @v1.get("/judgments/{judgment_id}", response_model=Judgment, tags=["judgments"])

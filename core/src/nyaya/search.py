@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Sequence
+from dataclasses import replace
 from typing import Protocol
 
 from nyaya.db import Database
@@ -16,6 +17,7 @@ from nyaya.domain import (
 from nyaya.errors import InvalidRequestError
 from nyaya.ml import Embedder, Reranker
 from nyaya.repos import CitationRepository, JudgmentRepository
+from nyaya.spelling import SpellingCorrector
 from nyaya.text import ParsedQuery, is_citation_query, normalize_act, normalize_citation, parse_query
 
 RRF_K = 60
@@ -54,11 +56,14 @@ def filter_sql(filters: SearchFilters) -> tuple[str, dict]:
         params["date_to"] = filters.date_to
     judges = [*filters.judges, *([filters.judge] if filters.judge else [])]
     for i, judge in enumerate(j.strip() for j in judges if j.strip()):
-        conditions.append(f"EXISTS (SELECT 1 FROM unnest(j.bench) b WHERE b ILIKE %(judge{i})s)")
+        conditions.append(f"EXISTS (SELECT 1 FROM unnest(j.bench) b WHERE {name_match('b', f'judge{i}', judge)})")
         params[f"judge{i}"] = f"%{judge}%"
+        params[f"judge{i}_raw"] = judge
     if filters.author:
-        conditions.append("j.author ILIKE %(author)s")
-        params["author"] = f"%{filters.author.strip()}%"
+        author = filters.author.strip()
+        conditions.append(name_match("j.author", "author", author))
+        params["author"] = f"%{author}%"
+        params["author_raw"] = author
     if filters.outcome == Outcome.OTHER:
         conditions.append("(j.disposal_nature IS NULL OR NOT (j.disposal_nature = ANY(%(known_outcomes)s)))")
         params["known_outcomes"] = [v for values in OUTCOME_VALUES.values() for v in values]
@@ -81,6 +86,18 @@ def filter_sql(filters: SearchFilters) -> tuple[str, dict]:
         conditions.append("p.judgment_id = %(judgment_id)s")
         params["judgment_id"] = filters.judgment_id
     return " AND ".join(conditions), params
+
+
+FUZZY_NAME_MIN_LENGTH = 5
+NAME_SIMILARITY = 0.5
+
+
+def name_match(column: str, param: str, value: str) -> str:
+    """Judge/author match: contains the text, or (for 5+ letters) closely resembles a word sequence in the name."""
+    contains = f"{column} ILIKE %({param})s"
+    if len(value) < FUZZY_NAME_MIN_LENGTH:
+        return contains
+    return f"({contains} OR word_similarity(%({param}_raw)s, {column}) >= {NAME_SIMILARITY})"
 
 
 def term_pattern(term: str) -> str:
@@ -117,10 +134,12 @@ class Bm25Retriever:
         where, params = filter_sql(filters)
         terms, term_params = term_sql(query)
         params |= term_params | {"q": query.rerank_text, "limit": limit}
+        # One-letter typo tolerance only when the query has words the corpus doesn't know.
+        match = "p.id @@@ paradedb.match('text', %(q)s, distance => 1)" if query.fuzzy else "p.text ||| %(q)s"
         rows = self._db.fetch_all(
             f"""SELECT p.id, p.judgment_id, paradedb.score(p.id) AS score
                 FROM paragraphs p JOIN judgments j ON j.id = p.judgment_id
-                WHERE p.text ||| %(q)s AND {terms} AND {where}
+                WHERE {match} AND {terms} AND {where}
                 ORDER BY score DESC LIMIT %(limit)s""",
             params,
         )
@@ -199,6 +218,7 @@ class SearchService:
         relevance_threshold: float,
         result_limit: int = 10,
         candidate_limit: int = 100,
+        spelling: SpellingCorrector | None = None,
     ) -> None:
         self._judgments = judgments
         self._citations = citations
@@ -208,6 +228,7 @@ class SearchService:
         self._threshold = relevance_threshold
         self._result_limit = result_limit
         self._candidate_limit = candidate_limit
+        self._spelling = spelling
 
     @property
     def default_mode(self) -> SearchMode:
@@ -219,9 +240,20 @@ class SearchService:
         query = parse_query(raw_query)
         if query.is_empty:
             raise InvalidRequestError("Add at least one word or phrase to search for (NOT only excludes).")
+        suggestion = None
+        if self._spelling:
+            unknown = self._spelling.unknown_words(raw_query)
+            if unknown:
+                query = replace(query, fuzzy=True)
+                suggestion = self._spelling.suggest(raw_query, unknown)
         hits = self.rank(query, filters, mode or self.default_mode)
         results = self._hydrate(hits)
-        return SearchResponse(query_type="fact_pattern", results=results, message=None if results else NO_RESULTS)
+        return SearchResponse(
+            query_type="fact_pattern",
+            results=results,
+            message=None if results else NO_RESULTS,
+            suggestion=suggestion,
+        )
 
     def rank(
         self,

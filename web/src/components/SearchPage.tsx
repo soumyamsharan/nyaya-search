@@ -9,7 +9,7 @@ import type { SearchFilters, SearchResponse } from "@/lib/types";
 import { Notice, StatusMessage, formatDate } from "./ui";
 
 type Field =
-  | { key: keyof SearchFilters; label: string; type: "text" | "date"; placeholder?: string }
+  | { key: keyof SearchFilters; label: string; type: "text" | "date"; placeholder?: string; judgeList?: boolean }
   | { key: keyof SearchFilters; label: string; type: "select"; options: { value: string; label: string }[] };
 
 const OUTCOMES = [
@@ -24,13 +24,14 @@ const OUTCOMES = [
 const FILTER_FIELDS: Field[] = [
   { key: "date_from", label: "Decided from", type: "date" },
   { key: "date_to", label: "Decided to", type: "date" },
-  { key: "judge", label: "Judges on bench (comma-separated)", type: "text", placeholder: "e.g. Pardiwala, Mahadevan" },
-  { key: "author", label: "Judgment written by", type: "text", placeholder: "e.g. Oka" },
+  { key: "judge", label: "Judges on bench (comma-separated)", type: "text", placeholder: "e.g. Pardiwala, Mahadevan", judgeList: true },
+  { key: "author", label: "Judgment written by", type: "text", placeholder: "e.g. Oka", judgeList: true },
   { key: "outcome", label: "Outcome", type: "select", options: OUTCOMES },
   { key: "match_in", label: "Match in", type: "select", options: MATCH_IN },
   { key: "act", label: "Act", type: "text", placeholder: "e.g. Negotiable Instruments Act" },
   { key: "section", label: "Section", type: "text", placeholder: "e.g. 138" },
 ];
+const JUDGE_LIST_ID = "judge-names";
 const URL_ONLY_FILTERS: (keyof SearchFilters)[] = ["year_from", "year_to"]; // older links keep working
 const MAX_QUERY = 2000;
 const EXAMPLE = "Cheque dishonoured, demand notice sent but never received; is the Section 138 complaint maintainable?";
@@ -54,7 +55,20 @@ export default function SearchPage() {
   const [filters, setFilters] = useState<SearchFilters>(() => readFilters(params));
   const [outcome, setOutcome] = useState<SearchOutcome>({ key: "" });
   const [hint, setHint] = useState<string | null>(null);
+  const [judges, setJudges] = useState<string[]>([]);
   const key = params.toString();
+
+  useEffect(() => {
+    api.judges().then((list) => setJudges(list.map((j) => j.name))).catch(() => setJudges([]));
+  }, []);
+
+  /** Run another query with the current URL filters (used by "Did you mean"). */
+  function searchFor(text: string) {
+    const next = new URLSearchParams(params);
+    next.set("q", text);
+    setQuery(text);
+    router.push(`/?${next}`);
+  }
 
   useEffect(() => {
     if (!urlQuery.trim()) return;
@@ -122,18 +136,37 @@ export default function SearchPage() {
                     ))}
                   </select>
                 ) : (
-                  <input {...common} type={field.type} placeholder={field.type === "text" ? field.placeholder : undefined} />
+                  <input
+                    {...common}
+                    type={field.type}
+                    placeholder={field.type === "text" ? field.placeholder : undefined}
+                    list={field.type === "text" && field.judgeList ? JUDGE_LIST_ID : undefined}
+                  />
                 )}
               </label>
             );
           })}
         </div>
+        <datalist id={JUDGE_LIST_ID}>
+          {judges.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
         <button type="submit" disabled={loading} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           {loading ? "Searching…" : "Search"}
         </button>
       </form>
 
       {hint ? <Notice>{hint}</Notice> : null}
+      {response?.suggestion && !error ? (
+        <p className="text-sm text-slate-700">
+          Did you mean:{" "}
+          <button type="button" onClick={() => searchFor(response.suggestion!)} className="font-medium text-indigo-700 underline">
+            {response.suggestion}
+          </button>
+          ?
+        </p>
+      ) : null}
       {error ? <StatusMessage error={error} /> : null}
       {response?.message && !error ? <Notice>{response.message}</Notice> : null}
 
