@@ -17,17 +17,17 @@ judgment refers to. The list SHALL be paginated at 25 judgments per page.
 - **THEN** the next 25 judgments are shown in the same order
 
 ### Requirement: About this Act
-The Act page SHALL show the Act's name, year and official source link. For Acts in the curated list, it SHALL also show a
-plain-language description, the name of the reviewer and the date reviewed. Acts not in the curated list SHALL show the
-name and source link only, without a description.
+The Act page SHALL show the Act's name and official source link. When a plain-language description has been written for the
+Act, it SHALL also show that description. Acts without a written description SHALL show the name and source link only, and
+no description is invented.
 
-#### Scenario: Curated Act
-- **WHEN** a user opens a curated Act
-- **THEN** the description, reviewer, review date and official source link are shown
+#### Scenario: Act with a written description
+- **WHEN** a user opens an Act that has a written description
+- **THEN** the description and official source link are shown
 
-#### Scenario: Uncurated Act
-- **WHEN** a user opens an Act that is not curated
-- **THEN** only its name, year and official source link are shown, and no description is invented
+#### Scenario: Act without a written description
+- **WHEN** a user opens an Act that has no written description
+- **THEN** only its name and official source link are shown, and no description is invented
 
 ### Requirement: Descriptions stay factual
 Descriptions SHALL describe only what the Act governs, in one to three sentences, and SHALL NOT state how courts have

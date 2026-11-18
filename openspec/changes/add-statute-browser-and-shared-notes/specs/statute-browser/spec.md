@@ -23,11 +23,16 @@ The system SHALL show, for an Act and section, every judgment that refers to tha
 - **THEN** the page says no judgments refer to it
 
 ### Requirement: Link from judgments
-Each section referred to in a judgment's text SHALL link to its section page.
+Each statute provision referred to in a judgment's text (a section, an article, a rule, a regulation or a notification)
+SHALL link to its provision page.
 
 #### Scenario: Section mentioned in a judgment
 - **WHEN** a judgment's paragraph refers to Section 138 of the NI Act
-- **THEN** that reference links to the statute page for Section 138 of the NI Act
+- **THEN** that reference links to the provision page for Section 138 of the Negotiable Instruments Act
+
+#### Scenario: Article mentioned in a judgment
+- **WHEN** a judgment's paragraph refers to Article 21 of the Constitution
+- **THEN** that reference links to the provision page for Article 21
 
 ### Requirement: Accurate matching
 A judgment SHALL be listed on a section page only when the section is referred to alongside the Act name in the same sentence. Judgments whose Act name cannot be matched SHALL NOT be guessed.

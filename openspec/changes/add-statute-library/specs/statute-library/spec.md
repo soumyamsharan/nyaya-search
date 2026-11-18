@@ -42,3 +42,42 @@ numbers SHALL be matched exactly.
 #### Scenario: Similar numbers
 - **WHEN** a judgment refers to Article 210 and the user opens Article 21
 - **THEN** that judgment is not listed for Article 21
+
+### Requirement: Provision pages for every statute kind
+Each provision (a section of an Act, a Constitution article, a rule, a regulation or a notification) SHALL have its own page
+at a stable address of the form /provisions/{kind}/{key}/{slug}. The page SHALL list every judgment that refers to the
+provision, newest first, with the paragraphs where it does so.
+
+#### Scenario: Article 21
+- **WHEN** a user opens Article 21 of the Constitution of India from a judgment
+- **THEN** the page lists the judgments that refer to Article 21 with their referring paragraphs
+
+#### Scenario: Provision with no judgments
+- **WHEN** no judgment in the corpus refers to a provision
+- **THEN** the page says so and does not invent a judgment
+
+### Requirement: Related judgments for a provision
+A provision page SHALL also list judgments that refer to other provisions of the same Act, nearest in meaning first, up to
+eight. A judgment already listed as referring to the provision SHALL NOT appear as related.
+
+#### Scenario: Related judgments
+- **WHEN** a user opens Section 138 of the Negotiable Instruments Act
+- **THEN** up to eight judgments that discuss other sections of that Act are listed, and each excerpt cites a section of that Act
+
+### Requirement: Provision API
+The API SHALL return a provision at GET /v1/provisions/{kind}/{key}/{slug}, with the referring judgments, the related
+judgments, the India Code search link and the description if one is written. An unknown provision SHALL return 404, and an
+unknown kind SHALL return 422.
+
+#### Scenario: Unknown kind
+- **WHEN** a client requests /v1/provisions/chapter/penal-code/1
+- **THEN** the API responds 422
+
+### Requirement: Act name abbreviations
+Common abbreviations SHALL be matched to the Act they stand for: N.I. Act and NI Act to the Negotiable Instruments Act; IPC
+to the Indian Penal Code; CrPC and Cr.P.C. to the Code of Criminal Procedure; CPC to the Code of Civil Procedure.
+
+#### Scenario: N.I. Act in a judgment
+- **WHEN** a judgment refers to Section 138 of the N.I. Act
+- **THEN** the reference links to Section 138 of the Negotiable Instruments Act, not to a separate Act
+
