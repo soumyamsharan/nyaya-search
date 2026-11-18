@@ -5,12 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { MATCH_IN } from "@/lib/roles";
-import type { SearchFilters, SearchResponse } from "@/lib/types";
+import type { SearchFilters, SearchResponse, StatuteSummary } from "@/lib/types";
+import Combobox, { type Option } from "./Combobox";
+import DateField from "./DateField";
 import { Notice, ResultSkeleton, Spinner, StatusMessage, formatDate } from "./ui";
 
-type Field =
-  | { key: keyof SearchFilters; label: string; type: "text" | "date"; placeholder?: string; judgeList?: boolean }
-  | { key: keyof SearchFilters; label: string; type: "select"; options: { value: string; label: string }[] };
+type FieldKind = "date" | "judges" | "author" | "outcome" | "match" | "act" | "section";
+interface FilterField {
+  key: keyof SearchFilters;
+  label: string;
+  kind: FieldKind;
+}
 
 const OUTCOMES = [
   { value: "", label: "Any outcome" },
@@ -21,17 +26,16 @@ const OUTCOMES = [
   { value: "other", label: "Other / not recorded" },
 ];
 
-const FILTER_FIELDS: Field[] = [
-  { key: "date_from", label: "Decided from", type: "date" },
-  { key: "date_to", label: "Decided to", type: "date" },
-  { key: "judge", label: "Judges on bench", type: "text", placeholder: "Comma-separated, e.g. Pardiwala, Mahadevan", judgeList: true },
-  { key: "author", label: "Judgment written by", type: "text", placeholder: "e.g. Oka", judgeList: true },
-  { key: "outcome", label: "Outcome", type: "select", options: OUTCOMES },
-  { key: "match_in", label: "Match in", type: "select", options: MATCH_IN },
-  { key: "act", label: "Act", type: "text", placeholder: "e.g. Negotiable Instruments Act" },
-  { key: "section", label: "Section", type: "text", placeholder: "e.g. 138" },
+const FILTER_FIELDS: FilterField[] = [
+  { key: "date_from", label: "Decided from", kind: "date" },
+  { key: "date_to", label: "Decided to", kind: "date" },
+  { key: "judge", label: "Judges on bench", kind: "judges" },
+  { key: "author", label: "Judgment written by", kind: "author" },
+  { key: "outcome", label: "Outcome", kind: "outcome" },
+  { key: "match_in", label: "Match in", kind: "match" },
+  { key: "act", label: "Act", kind: "act" },
+  { key: "section", label: "Section", kind: "section" },
 ];
-const JUDGE_LIST_ID = "judge-names";
 const URL_ONLY_FILTERS: (keyof SearchFilters)[] = ["year_from", "year_to"]; // older links keep working
 const MAX_QUERY = 2000;
 const EXAMPLE = "Cheque dishonoured, demand notice sent but never received; is the Section 138 complaint maintainable?";
@@ -55,13 +59,33 @@ export default function SearchPage() {
   const [filters, setFilters] = useState<SearchFilters>(() => readFilters(params));
   const [outcome, setOutcome] = useState<SearchOutcome>({ key: "" });
   const [hint, setHint] = useState<string | null>(null);
-  const [judges, setJudges] = useState<string[]>([]);
+  const [judges, setJudges] = useState<Option[]>([]);
+  const [acts, setActs] = useState<StatuteSummary[]>([]);
   const key = params.toString();
   const activeFilters = FILTER_FIELDS.filter((f) => params.get(f.key)).length;
 
   useEffect(() => {
-    api.judges().then((list) => setJudges(list.map((j) => j.name))).catch(() => setJudges([]));
+    api
+      .judges()
+      .then((list) => setJudges(list.map((j) => ({ value: j.name, label: j.name, hint: `${j.judgments}` }))))
+      .catch(() => setJudges([]));
+    api.statutes().then((index) => setActs(index.acts)).catch(() => setActs([]));
   }, []);
+
+  // Section choices come from the Act chosen in the Act field.
+  const actName = (filters.act ?? "").trim().toLowerCase();
+  const chosenAct = acts.find((a) => a.name.toLowerCase() === actName);
+  const actOptions: Option[] = acts.map((a) => ({
+    value: a.name,
+    label: a.name,
+    hint: `${a.judgments}`,
+    keywords: a.key.replace(/-/g, " "), // so "negotiable" finds "NI Act"
+  }));
+  const sectionOptions: Option[] = (chosenAct?.sections ?? []).map((s) => ({
+    value: s.section,
+    label: `Section ${s.section}`,
+    hint: `${s.judgments}`,
+  }));
 
   /** Run another query with the current URL filters (used by "Did you mean"). */
   function searchFor(text: string) {
@@ -86,6 +110,51 @@ export default function SearchPage() {
   const loading = Boolean(urlQuery.trim()) && outcome.key !== key;
   const current = outcome.key === key ? outcome : { key };
   const { response, error } = current;
+
+  function renderFilter({ key: field, label, kind }: FilterField) {
+    const id = `filter-${field}`;
+    const value = filters[field] ?? "";
+    const set = (next: string) => setFilters((f) => ({ ...f, [field]: next }));
+    const judgeNames = { emptyText: "No judge matches", placeholder: "Type a name" };
+    switch (kind) {
+      case "date":
+        return <DateField id={id} label={label} value={value} onChange={set} />;
+      case "judges":
+        return <Combobox id={id} label={label} value={value} onChange={set} options={judges} multi freeText {...judgeNames} />;
+      case "author":
+        return <Combobox id={id} label={label} value={value} onChange={set} options={judges} freeText {...judgeNames} />;
+      case "outcome":
+        return <Combobox id={id} label={label} value={value} onChange={set} options={OUTCOMES} placeholder="Any outcome" />;
+      case "match":
+        return <Combobox id={id} label={label} value={value} onChange={set} options={MATCH_IN} placeholder="Anywhere in the judgment" />;
+      case "act":
+        return (
+          <Combobox
+            id={id}
+            label={label}
+            value={value}
+            onChange={set}
+            options={actOptions}
+            freeText
+            placeholder="Type an Act, e.g. Negotiable"
+            emptyText="No Act matches"
+          />
+        );
+      case "section":
+        return (
+          <Combobox
+            id={id}
+            label={label}
+            value={value}
+            onChange={set}
+            options={sectionOptions}
+            freeText
+            placeholder={chosenAct ? "Type a section number" : "Choose an Act first"}
+            emptyText={chosenAct ? "No section matches" : "Choose an Act to see its sections"}
+          />
+        );
+    }
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -129,40 +198,12 @@ export default function SearchPage() {
             </span>
           </summary>
           <div className="grid grid-cols-2 items-start gap-x-4 gap-y-5 border-t border-rule px-4 py-5 sm:grid-cols-4">
-          {FILTER_FIELDS.map((field) => {
-            const common = {
-              value: filters[field.key] ?? "",
-              onChange: (e: { target: { value: string } }) => setFilters({ ...filters, [field.key]: e.target.value }),
-              className: "mt-1.5 block h-9 w-full min-w-0 rounded border border-rule bg-white px-2.5 text-sm text-ink",
-            };
-            return (
-              <label key={field.key} className="flex min-w-0 flex-col text-xs font-medium text-ink-soft">
-                <span className="flex min-h-8 items-end leading-4">{field.label}</span>
-                {field.type === "select" ? (
-                  <select {...common}>
-                    {field.options.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    {...common}
-                    type={field.type}
-                    placeholder={field.type === "text" ? field.placeholder : undefined}
-                    list={field.type === "text" && field.judgeList ? JUDGE_LIST_ID : undefined}
-                  />
-                )}
-              </label>
-            );
-          })}
-          </div>
-          <datalist id={JUDGE_LIST_ID}>
-            {judges.map((name) => (
-              <option key={name} value={name} />
+            {FILTER_FIELDS.map((field) => (
+              <div key={field.key} className="min-w-0">
+                {renderFilter(field)}
+              </div>
             ))}
-          </datalist>
+          </div>
         </details>
         <button type="submit" disabled={loading} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           {loading ? (
