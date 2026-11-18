@@ -24,7 +24,7 @@ const OUTCOMES = [
 const FILTER_FIELDS: Field[] = [
   { key: "date_from", label: "Decided from", type: "date" },
   { key: "date_to", label: "Decided to", type: "date" },
-  { key: "judge", label: "Judges on bench (comma-separated)", type: "text", placeholder: "e.g. Pardiwala, Mahadevan", judgeList: true },
+  { key: "judge", label: "Judges on bench", type: "text", placeholder: "Comma-separated, e.g. Pardiwala, Mahadevan", judgeList: true },
   { key: "author", label: "Judgment written by", type: "text", placeholder: "e.g. Oka", judgeList: true },
   { key: "outcome", label: "Outcome", type: "select", options: OUTCOMES },
   { key: "match_in", label: "Match in", type: "select", options: MATCH_IN },
@@ -128,16 +128,16 @@ export default function SearchPage() {
               ▾
             </span>
           </summary>
-          <div className="grid grid-cols-2 gap-3 border-t border-rule px-4 py-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-5 border-t border-rule px-4 py-5 sm:grid-cols-4">
           {FILTER_FIELDS.map((field) => {
             const common = {
               value: filters[field.key] ?? "",
               onChange: (e: { target: { value: string } }) => setFilters({ ...filters, [field.key]: e.target.value }),
-              className: "mt-1 w-full rounded border border-rule bg-surface px-2 py-1 text-sm",
+              className: "mt-1.5 block h-9 w-full min-w-0 rounded border border-rule bg-white px-2.5 text-sm text-ink",
             };
             return (
-              <label key={field.key} className="text-xs text-muted">
-                {field.label}
+              <label key={field.key} className="flex min-w-0 flex-col text-xs font-medium text-ink-soft">
+                <span className="flex min-h-8 items-end leading-4">{field.label}</span>
                 {field.type === "select" ? (
                   <select {...common}>
                     {field.options.map((o) => (
@@ -199,7 +199,7 @@ export default function SearchPage() {
                 href={`/judgments/${judgment.id}`}
                 onMouseEnter={() => api.prefetchJudgment(judgment.id)}
                 onFocus={() => api.prefetchJudgment(judgment.id)}
-                className="font-serif text-xl leading-snug text-ink hover:text-accent"
+                className="font-serif text-xl leading-snug text-ink underline decoration-accent/60 decoration-1 underline-offset-[5px] hover:text-accent hover:decoration-accent"
               >
                 {judgment.title}
               </Link>
