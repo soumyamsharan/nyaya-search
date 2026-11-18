@@ -70,10 +70,10 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="absolute right-0 top-full z-30 mt-2 w-[min(28rem,90vw)] space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm shadow-xl">
+    <div className="absolute right-0 top-full z-30 mt-2 w-[min(28rem,90vw)] space-y-3 rounded-lg border border-rule bg-surface p-4 text-sm shadow-xl">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">Share your research note</h2>
-        <button onClick={onClose} className="text-slate-500 hover:text-slate-800" aria-label="Close">
+        <button onClick={onClose} className="text-muted hover:text-ink-soft" aria-label="Close">
           ✕
         </button>
       </div>
@@ -81,16 +81,16 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
       {created ? (
         <div className="space-y-2">
           <p>Your link:</p>
-          <p className="break-all rounded bg-slate-50 p-2 font-mono text-xs">{shareUrl(created.id)}</p>
+          <p className="break-all rounded bg-paper p-2 font-mono text-xs">{shareUrl(created.id)}</p>
           <button
             onClick={() => navigator.clipboard?.writeText(shareUrl(created.id))}
-            className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50"
+            className="rounded border border-rule px-2 py-1 text-xs hover:bg-paper"
           >
             Copy link
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="text-slate-600">Your note is empty. Add paragraphs with “Add to note” first.</p>
+        <p className="text-muted">Your note is empty. Add paragraphs with “Add to note” first.</p>
       ) : confirming ? (
         <div className="space-y-2">
           <p className="text-amber-900">{DISCLOSURE}</p>
@@ -98,11 +98,11 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
             <button
               onClick={create}
               disabled={busy}
-              className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
             >
               {busy ? "Creating…" : "I understand, create the link"}
             </button>
-            <button onClick={() => setConfirming(false)} className="text-xs text-slate-600 hover:underline">
+            <button onClick={() => setConfirming(false)} className="text-xs text-muted hover:underline">
               Cancel
             </button>
           </div>
@@ -110,7 +110,7 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          className="rounded border border-indigo-300 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+          className="rounded border border-accent-soft px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent-soft"
         >
           Create a link to this note ({items.length} paragraph{items.length === 1 ? "" : "s"})
         </button>
@@ -119,16 +119,16 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
       {message ? <p className="text-red-700">{message}</p> : null}
 
       {links.length ? (
-        <div className="space-y-2 border-t border-slate-200 pt-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your shared links</h3>
+        <div className="space-y-2 border-t border-rule pt-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Your shared links</h3>
           <ul className="space-y-2">
             {links.map((link) => (
               <li key={link.id} className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-600">
+                <span className="text-muted">
                   {link.count} paragraph{link.count === 1 ? "" : "s"}, until{" "}
                   {new Date(link.expiresAt).toLocaleDateString("en-IN")}
                 </span>
-                <button onClick={() => renew(link)} className="text-indigo-700 hover:underline">
+                <button onClick={() => renew(link)} className="text-accent hover:underline">
                   Renew 30 days
                 </button>
                 <button onClick={() => revoke(link)} className="text-red-700 hover:underline">

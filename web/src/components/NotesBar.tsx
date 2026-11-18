@@ -31,21 +31,21 @@ export default function NotesBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
-      <span className="text-slate-600">Research note: {items.length} paragraph{items.length === 1 ? "" : "s"}</span>
-      <button onClick={exportNote} className="rounded border border-slate-300 px-2 py-1 hover:bg-slate-50">
+      <span className="text-muted">Research note: {items.length} paragraph{items.length === 1 ? "" : "s"}</span>
+      <button onClick={exportNote} className="rounded border border-rule px-2 py-1 hover:bg-paper">
         Export Markdown
       </button>
       <div className="relative">
         <button
           onClick={() => setSharing((open) => !open)}
-          className="rounded border border-indigo-300 px-2 py-1 text-indigo-700 hover:bg-indigo-50"
+          className="rounded border border-accent-soft px-2 py-1 text-accent hover:bg-accent-soft"
         >
           Share
         </button>
         {sharing ? <ShareNote onClose={() => setSharing(false)} /> : null}
       </div>
       {items.length ? (
-        <button onClick={clearNotes} className="text-slate-500 hover:underline">
+        <button onClick={clearNotes} className="text-muted hover:underline">
           Clear
         </button>
       ) : null}

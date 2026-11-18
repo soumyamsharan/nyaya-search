@@ -57,6 +57,7 @@ export default function SearchPage() {
   const [hint, setHint] = useState<string | null>(null);
   const [judges, setJudges] = useState<string[]>([]);
   const key = params.toString();
+  const activeFilters = FILTER_FIELDS.filter((f) => params.get(f.key)).length;
 
   useEffect(() => {
     api.judges().then((list) => setJudges(list.map((j) => j.name))).catch(() => setJudges([]));
@@ -101,7 +102,7 @@ export default function SearchPage() {
   return (
     <div className="space-y-6">
       <form onSubmit={submit} className="space-y-3">
-        <label htmlFor="q" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="q" className="block text-sm font-medium text-ink-soft">
           Describe the facts and the legal issue, quote a phrase, or paste a citation
         </label>
         <textarea
@@ -111,21 +112,31 @@ export default function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
           rows={3}
           placeholder={EXAMPLE}
-          className="w-full rounded-md border border-slate-300 p-3 text-sm focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-md border border-rule p-3 text-sm focus:border-accent focus:outline-none"
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           Tip: <code>AND</code> requires both words, <code>OR</code> allows either, <code>NOT</code> excludes a word or
           &quot;quoted phrase&quot; (operators in capitals), e.g. <code>bail NOT anticipatory</code>.
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <details open={activeFilters > 0} className="group rounded-md border border-rule bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-sm text-ink-soft hover:text-ink">
+            <span>
+              Refine search
+              {activeFilters ? <span className="ml-2 text-accent">{activeFilters} set</span> : null}
+            </span>
+            <span className="text-muted transition-transform group-open:rotate-180" aria-hidden>
+              ▾
+            </span>
+          </summary>
+          <div className="grid grid-cols-2 gap-3 border-t border-rule px-4 py-4 sm:grid-cols-4">
           {FILTER_FIELDS.map((field) => {
             const common = {
               value: filters[field.key] ?? "",
               onChange: (e: { target: { value: string } }) => setFilters({ ...filters, [field.key]: e.target.value }),
-              className: "mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm",
+              className: "mt-1 w-full rounded border border-rule bg-surface px-2 py-1 text-sm",
             };
             return (
-              <label key={field.key} className="text-xs text-slate-600">
+              <label key={field.key} className="text-xs text-muted">
                 {field.label}
                 {field.type === "select" ? (
                   <select {...common}>
@@ -146,22 +157,23 @@ export default function SearchPage() {
               </label>
             );
           })}
-        </div>
-        <datalist id={JUDGE_LIST_ID}>
-          {judges.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
-        <button type="submit" disabled={loading} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+          </div>
+          <datalist id={JUDGE_LIST_ID}>
+            {judges.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </details>
+        <button type="submit" disabled={loading} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           {loading ? "Searching…" : "Search"}
         </button>
       </form>
 
       {hint ? <Notice>{hint}</Notice> : null}
       {response?.suggestion && !error ? (
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-ink-soft">
           Did you mean:{" "}
-          <button type="button" onClick={() => searchFor(response.suggestion!)} className="font-medium text-indigo-700 underline">
+          <button type="button" onClick={() => searchFor(response.suggestion!)} className="font-medium text-accent underline">
             {response.suggestion}
           </button>
           ?
@@ -170,22 +182,25 @@ export default function SearchPage() {
       {error ? <StatusMessage error={error} /> : null}
       {response?.message && !error ? <Notice>{response.message}</Notice> : null}
 
-      <ol className="space-y-4">
-        {response?.results.map(({ judgment, matched_paragraph: p }) => (
-          <li key={judgment.id} className="rounded-lg border border-slate-200 bg-white p-4">
-            <Link href={`/judgments/${judgment.id}`} className="font-semibold text-indigo-700 hover:underline">
-              {judgment.title}
-            </Link>
-            <p className="mt-1 text-xs text-slate-500">
-              {[judgment.citation, formatDate(judgment.decision_date), judgment.bench.join(", ")].filter(Boolean).join(" · ")}
-              {" · "}Cited by {judgment.cited_by_count} in corpus
-            </p>
-            <blockquote className="mt-3 border-l-4 border-indigo-200 pl-3 text-sm text-slate-700">
-              <Link href={`/judgments/${judgment.id}#p-${p.seq}`} className="mr-1 font-medium text-indigo-700 hover:underline">
-                ¶{p.label}
+      <ol className="divide-y divide-rule border-y border-rule">
+        {response?.results.map(({ judgment, matched_paragraph: p }, index) => (
+          <li key={judgment.id} className="flex gap-4 py-6">
+            <span className="w-6 shrink-0 pt-1 font-serif text-sm tabular-nums text-muted">{index + 1}</span>
+            <div className="min-w-0 flex-1">
+              <Link href={`/judgments/${judgment.id}`} className="font-serif text-xl leading-snug text-ink hover:text-accent">
+                {judgment.title}
               </Link>
-              {p.text.length > 600 ? `${p.text.slice(0, 600)}…` : p.text}
-            </blockquote>
+              <p className="mt-1 text-xs text-muted">
+                {[judgment.citation, formatDate(judgment.decision_date), judgment.bench.join(", ")].filter(Boolean).join(" · ")}
+                {" · "}Cited by {judgment.cited_by_count} in corpus
+              </p>
+              <blockquote className="reading mt-3 border-l-2 border-accent pl-4 text-[0.95rem] text-ink-soft">
+                <Link href={`/judgments/${judgment.id}#p-${p.seq}`} className="mr-1.5 font-sans text-xs font-medium text-accent hover:underline">
+                  ¶{p.label}
+                </Link>
+                {p.text.length > 600 ? `${p.text.slice(0, 600)}…` : p.text}
+              </blockquote>
+            </div>
           </li>
         ))}
       </ol>

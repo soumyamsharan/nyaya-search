@@ -16,7 +16,7 @@ async function ActFromParams({
 
 export default function StatuteActPage(props: PageProps<"/statutes/[key]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading Act…</p>}>
+    <Suspense fallback={<p className="text-sm text-muted">Loading Act…</p>}>
       <ActFromParams params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );

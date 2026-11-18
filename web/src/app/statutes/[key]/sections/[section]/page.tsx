@@ -8,7 +8,7 @@ async function SectionFromParams({ params }: { params: Promise<{ key: string; se
 
 export default function StatuteSectionPage(props: PageProps<"/statutes/[key]/sections/[section]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading section…</p>}>
+    <Suspense fallback={<p className="text-sm text-muted">Loading section…</p>}>
       <SectionFromParams params={props.params} />
     </Suspense>
   );

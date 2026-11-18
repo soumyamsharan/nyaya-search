@@ -15,7 +15,7 @@ async function ProvisionFromParams({ params }: { params: Promise<{ kind: string;
 
 export default function ProvisionPage(props: PageProps<"/provisions/[kind]/[key]/[slug]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading provision…</p>}>
+    <Suspense fallback={<p className="text-sm text-muted">Loading provision…</p>}>
       <ProvisionFromParams params={props.params} />
     </Suspense>
   );

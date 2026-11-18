@@ -5,7 +5,7 @@ import { ApiError } from "@/lib/api";
 import type { CitedSentence } from "@/lib/types";
 
 const TONES = {
-  info: "border-slate-300 bg-slate-50 text-slate-700",
+  info: "border-rule bg-paper text-ink-soft",
   warn: "border-amber-300 bg-amber-50 text-amber-900",
   error: "border-red-300 bg-red-50 text-red-800",
 };
@@ -31,7 +31,7 @@ export function StatusMessage({ error }: { error: unknown }) {
 
 export function MachineGenerated() {
   return (
-    <p className="text-xs text-slate-500">
+    <p className="text-xs text-muted">
       Machine-generated from the judgment&apos;s own paragraphs. A research aid only — read the judgment before
       citing it.
     </p>
@@ -40,7 +40,7 @@ export function MachineGenerated() {
 
 export function ParagraphLink({ seq, label }: { seq: number; label: string }) {
   return (
-    <a href={`#p-${seq}`} className="ml-1 rounded bg-indigo-50 px-1 text-xs font-medium text-indigo-700 hover:underline">
+    <a href={`#p-${seq}`} className="ml-1 rounded bg-accent-soft px-1 text-xs font-medium text-accent hover:underline">
       ¶{label}
     </a>
   );
@@ -64,9 +64,9 @@ export function CitedSentences({ sentences }: { sentences: CitedSentence[] }) {
 
 export function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
+    <section className="rounded-md border border-rule bg-surface p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h2>
+        <h2 className="font-serif text-lg font-medium text-ink">{title}</h2>
         {action}
       </div>
       {children}

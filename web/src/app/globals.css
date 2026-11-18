@@ -1,5 +1,53 @@
 @import "tailwindcss";
 
+/* Palette: warm paper, dark ink and one deep green accent. Colours are tokens so the whole app changes together. */
+@theme {
+  --color-paper: #f6f3ec;
+  --color-surface: #fffdf8;
+  --color-ink: #1d1b18;
+  --color-ink-soft: #3d3a33;
+  --color-muted: #6b665b;
+  --color-rule: #d8d1c0;
+  --color-accent: #1f4d3a;
+  --color-accent-hover: #163a2b;
+  --color-accent-soft: #e4ebe3;
+  --color-mark: #f1e5b8;
+
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
+
+html {
+  background: var(--color-paper);
+}
+
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+/* Judgment text is read at length, so it gets the serif face and generous leading. */
+.reading {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

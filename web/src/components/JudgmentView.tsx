@@ -34,7 +34,7 @@ function linkParagraphRefs(text: string, seqByLabel: Map<string, number>): React
     const seq = first ? seqByLabel.get(first) : undefined;
     nodes.push(
       seq ? (
-        <a key={match.index} href={`#p-${seq}`} className="text-indigo-700 hover:underline">
+        <a key={match.index} href={`#p-${seq}`} className="text-accent hover:underline">
           {match[0]}
         </a>
       ) : (
@@ -98,8 +98,8 @@ function AnnotatedText({
         ? `${ref.title ?? ""}${ref.citation ? `, ${ref.citation}` : ""}`
         : "This case is not in the Nyaya Search corpus",
       tone: ref.judgment_id
-        ? "rounded bg-yellow-100 px-0.5 text-indigo-800 underline decoration-dotted hover:bg-yellow-200"
-        : "rounded bg-slate-100 px-0.5 text-slate-600",
+        ? "rounded bg-mark px-0.5 text-accent underline decoration-dotted hover:bg-mark"
+        : "rounded bg-paper px-0.5 text-muted",
     })),
     ...statutes.map((st) => ({
       raw: st.raw,
@@ -154,7 +154,7 @@ function RoleFilter({ selected, onToggle, counts }: { selected: Role[]; onToggle
   return (
     <div className="mb-3 space-y-1">
       <div className="flex flex-wrap gap-1.5">
-        <button onClick={() => onToggle(null)} className={`${chip} ${selected.length ? "border-slate-300" : "border-indigo-500 bg-indigo-50 text-indigo-700"}`}>
+        <button onClick={() => onToggle(null)} className={`${chip} ${selected.length ? "border-rule" : "border-accent bg-accent-soft text-accent"}`}>
           Show all
         </button>
         {ROLES.filter(({ role }) => counts.get(role)).map(({ role, label }) => (
@@ -162,13 +162,13 @@ function RoleFilter({ selected, onToggle, counts }: { selected: Role[]; onToggle
             key={role}
             onClick={() => onToggle(role)}
             aria-pressed={selected.includes(role)}
-            className={`${chip} ${selected.includes(role) ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-slate-300 text-slate-600"}`}
+            className={`${chip} ${selected.includes(role) ? "border-accent bg-accent-soft text-accent" : "border-rule text-muted"}`}
           >
             {label} ({counts.get(role)})
           </button>
         ))}
       </div>
-      <p className="text-xs text-slate-500">Paragraph roles are assigned automatically and may be wrong.</p>
+      <p className="text-xs text-muted">Paragraph roles are assigned automatically and may be wrong.</p>
     </div>
   );
 }
@@ -188,14 +188,14 @@ function ParagraphItem({ judgment, paragraph, highlighted }: { judgment: Judgmen
   }
 
   return (
-    <li id={`p-${paragraph.seq}`} className={`group scroll-mt-20 rounded px-2 py-1 ${highlighted ? "bg-yellow-100" : ""}`}>
+    <li id={`p-${paragraph.seq}`} className={`group scroll-mt-20 rounded px-2 py-1 ${highlighted ? "bg-mark" : ""}`}>
       <div className="flex gap-3">
-        <a href={`#p-${paragraph.seq}`} className="w-12 shrink-0 pt-0.5 text-right text-xs font-semibold text-slate-400">
+        <a href={`#p-${paragraph.seq}`} className="w-12 shrink-0 pt-0.5 text-right text-xs font-semibold text-muted">
           ¶{paragraph.label}
         </a>
         <div className="flex-1">
           <RoleTag role={paragraph.role} />
-          <p className="text-sm leading-relaxed text-slate-800">
+          <p className="reading text-ink">
             <AnnotatedText
               text={paragraph.text}
               references={paragraph.references ?? []}
@@ -204,7 +204,7 @@ function ParagraphItem({ judgment, paragraph, highlighted }: { judgment: Judgmen
           </p>
         </div>
       </div>
-      <div className="ml-15 mt-1 flex gap-3 text-xs text-indigo-700 opacity-60 group-hover:opacity-100">
+      <div className="ml-15 mt-1 flex gap-3 text-xs text-accent opacity-60 group-hover:opacity-100">
         <button onClick={copy}>{copied ? "Copied" : "Copy with citation"}</button>
         <button
           onClick={() =>
@@ -267,7 +267,7 @@ function BackToOrigin({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-5 right-5 z-20 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-indigo-700"
+      className="fixed bottom-5 right-5 z-20 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-accent-hover"
     >
       ↩ Back to where you were
     </button>
@@ -294,7 +294,7 @@ export default function JudgmentView({ id }: { id: string }) {
   }, [judgment]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!judgment) return <p className="text-sm text-slate-500">Loading judgment…</p>;
+  if (!judgment) return <p className="text-sm text-muted">Loading judgment…</p>;
 
   const seqByLabel = new Map(judgment.paragraphs.map((p) => [p.label, p.seq]));
   return (
@@ -302,15 +302,15 @@ export default function JudgmentView({ id }: { id: string }) {
       {jumps.canReturn ? <BackToOrigin onClick={jumps.goBack} /> : null}
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">{judgment.title}</h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {[judgment.neutral_citation, judgment.scr_citation, formatDate(judgment.decision_date)].filter(Boolean).join(" · ")}
         </p>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           Bench: {judgment.bench.join(", ") || "not stated"}
           {judgment.author ? ` · Author: ${judgment.author}` : ""}
         </p>
-        {judgment.acts.length ? <p className="text-sm text-slate-600">Acts: {judgment.acts.join("; ")}</p> : null}
-        <a href={judgment.pdf_url} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-indigo-700 hover:underline">
+        {judgment.acts.length ? <p className="text-sm text-muted">Acts: {judgment.acts.join("; ")}</p> : null}
+        <a href={judgment.pdf_url} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-accent hover:underline">
           Original PDF ↗
         </a>
       </header>
@@ -322,12 +322,12 @@ export default function JudgmentView({ id }: { id: string }) {
       {judgment.reporter_front_matter.length ? (
         <Section title="Reporter's headnotes (prepared by the law reporter, not the court)">
           <details>
-            <summary className="cursor-pointer text-sm text-indigo-700">Show headnotes</summary>
+            <summary className="cursor-pointer text-sm text-accent">Show headnotes</summary>
             <dl className="mt-3 space-y-3 text-sm">
               {judgment.reporter_front_matter.map((s) => (
                 <div key={s.section}>
                   <dt className="font-semibold">{s.title}</dt>
-                  <dd className="text-slate-700">{linkParagraphRefs(s.text, seqByLabel)}</dd>
+                  <dd className="text-ink-soft">{linkParagraphRefs(s.text, seqByLabel)}</dd>
                 </div>
               ))}
             </dl>
@@ -337,7 +337,7 @@ export default function JudgmentView({ id }: { id: string }) {
 
       <Section title="Judgment">
         <RoleFilter selected={selectedRoles} onToggle={toggleRole} counts={roleCounts(judgment.paragraphs)} />
-        <label className="mb-3 flex items-center gap-2 text-xs text-slate-700">
+        <label className="mb-3 flex items-center gap-2 text-xs text-ink-soft">
           <input type="checkbox" checked={citesOnly} onChange={(e) => setCitesOnly(e.target.checked)} />
           Cites cases only ({judgment.paragraphs.filter((p) => p.cites_cases).length} paragraphs)
         </label>

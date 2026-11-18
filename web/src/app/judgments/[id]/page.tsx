@@ -8,7 +8,7 @@ async function JudgmentFromParams({ params }: { params: Promise<{ id: string }> 
 
 export default function JudgmentPage(props: PageProps<"/judgments/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading judgment…</p>}>
+    <Suspense fallback={<p className="text-sm text-muted">Loading judgment…</p>}>
       <JudgmentFromParams params={props.params} />
     </Suspense>
   );

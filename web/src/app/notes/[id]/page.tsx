@@ -8,7 +8,7 @@ async function NoteFromParams({ params }: { params: Promise<{ id: string }> }) {
 
 export default function NotePage(props: PageProps<"/notes/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading note…</p>}>
+    <Suspense fallback={<p className="text-sm text-muted">Loading note…</p>}>
       <NoteFromParams params={props.params} />
     </Suspense>
   );

@@ -34,7 +34,7 @@ export function BreakdownPanel({ judgmentId }: { judgmentId: string }) {
   return (
     <Section title="Breakdown">
       {!breakdown && !error ? (
-        <button onClick={load} disabled={loading} className="rounded-md border border-indigo-300 px-3 py-1.5 text-sm text-indigo-700 disabled:opacity-50">
+        <button onClick={load} disabled={loading} className="rounded-md border border-accent-soft px-3 py-1.5 text-sm text-accent disabled:opacity-50">
           {loading ? "Preparing breakdown… (first time can take a while)" : "Show facts, issues, held and ratio"}
         </button>
       ) : null}
@@ -86,12 +86,12 @@ export function QuestionPanel({ judgmentId }: { judgmentId: string }) {
           onChange={(e) => setQuestion(e.target.value)}
           rows={2}
           placeholder="e.g. What did the court hold on service of the demand notice?"
-          className="w-full rounded-md border border-slate-300 p-2 text-sm"
+          className="w-full rounded-md border border-rule p-2 text-sm"
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           Your question is processed by an external AI model provider and is not stored by Nyaya Search.
         </p>
-        <button type="submit" disabled={loading || !question.trim()} className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white disabled:opacity-50">
+        <button type="submit" disabled={loading || !question.trim()} className="rounded-md bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-50">
           {loading ? "Answering…" : "Ask"}
         </button>
       </form>
@@ -111,7 +111,7 @@ export function QuestionPanel({ judgmentId }: { judgmentId: string }) {
 
 function JudgmentLine({ link }: { link: CitationGraph["cites"][number] }) {
   return (
-    <Link href={`/judgments/${link.judgment.id}`} className="text-indigo-700 hover:underline">
+    <Link href={`/judgments/${link.judgment.id}`} className="text-accent hover:underline">
       {link.judgment.title}
       {link.judgment.citation ? `, ${link.judgment.citation}` : ""}
     </Link>
@@ -142,14 +142,14 @@ export function CitationsPanel({ graph }: { graph: CitationGraph | null }) {
               {graph.cited_by.map((link) => (
                 <li key={`${link.judgment.id}-${link.paragraph.seq}`}>
                   <JudgmentLine link={link} />{" "}
-                  <Link href={`/judgments/${link.judgment.id}#p-${link.paragraph.seq}`} className="text-xs text-slate-500 hover:underline">
+                  <Link href={`/judgments/${link.judgment.id}#p-${link.paragraph.seq}`} className="text-xs text-muted hover:underline">
                     in ¶{link.paragraph.label}
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-slate-500">No judgment in the corpus cites this one yet.</p>
+            <p className="text-muted">No judgment in the corpus cites this one yet.</p>
           )}
         </div>
         <div>
@@ -162,8 +162,8 @@ export function CitationsPanel({ graph }: { graph: CitationGraph | null }) {
               </li>
             ))}
             {graph.unresolved.map((c, i) => (
-              <li key={`u-${i}`} className="text-slate-600">
-                {c.raw} <span className="text-xs text-slate-400">(not in corpus)</span>
+              <li key={`u-${i}`} className="text-muted">
+                {c.raw} <span className="text-xs text-muted">(not in corpus)</span>
                 <ParagraphLink seq={c.paragraph.seq} label={c.paragraph.label} />
               </li>
             ))}

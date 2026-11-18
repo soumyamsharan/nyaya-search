@@ -36,7 +36,7 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
   }, [kind, statuteKey, slug]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!page) return <p className="text-sm text-slate-500">Loading provision…</p>;
+  if (!page) return <p className="text-sm text-muted">Loading provision…</p>;
 
   const title = `${KIND_LABEL[page.kind]} ${page.number}, ${page.name}`;
   const actHref = page.kind === "article" ? null : `/statutes/${page.key}`;
@@ -44,13 +44,13 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
   return (
     <div className="space-y-4">
       <p className="text-sm">
-        <Link href="/statutes" className="text-indigo-700 hover:underline">
+        <Link href="/statutes" className="text-accent hover:underline">
           Statutes
         </Link>
         {actHref ? (
           <>
             {" / "}
-            <Link href={actHref} className="text-indigo-700 hover:underline">
+            <Link href={actHref} className="text-accent hover:underline">
               {page.name}
             </Link>
           </>
@@ -60,9 +60,9 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
 
       <Section title="What it means">
         {page.description ? (
-          <p className="text-sm text-slate-700">{page.description}</p>
+          <p className="text-sm text-ink-soft">{page.description}</p>
         ) : (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             A plain-language description of this provision is not available yet. The judgments below show how the
             Supreme Court has applied it.
           </p>
@@ -72,11 +72,11 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
             href={page.official_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-indigo-700 hover:underline"
+            className="font-medium text-accent hover:underline"
           >
             Search for the official text on India Code
           </a>{" "}
-          <span className="text-xs text-slate-500">(opens in a new window)</span>
+          <span className="text-xs text-muted">(opens in a new window)</span>
         </p>
       </Section>
 
@@ -86,18 +86,18 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
         ) : (
           <ol className="space-y-4">
             {page.judgments.map(({ judgment, paragraphs }) => (
-              <li key={judgment.id} className="rounded-lg border border-slate-200 bg-white p-4">
-                <Link href={`/judgments/${judgment.id}`} className="font-semibold text-indigo-700 hover:underline">
+              <li key={judgment.id} className="rounded-lg border border-rule bg-surface p-4">
+                <Link href={`/judgments/${judgment.id}`} className="font-semibold text-accent hover:underline">
                   {judgment.title}
                 </Link>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted">
                   {[judgment.citation, formatDate(judgment.decision_date)].filter(Boolean).join(" · ")}
                 </p>
                 {paragraphs.slice(0, 2).map((p) => (
-                  <blockquote key={p.label} className="mt-3 border-l-4 border-indigo-200 pl-3 text-sm text-slate-700">
+                  <blockquote key={p.label} className="mt-3 border-l-4 border-accent-soft pl-3 text-sm text-ink-soft">
                     <Link
                       href={`/judgments/${judgment.id}#p-${p.label}`}
-                      className="mr-1 font-medium text-indigo-700 hover:underline"
+                      className="mr-1 font-medium text-accent hover:underline"
                     >
                       ¶{p.label}
                     </Link>
@@ -112,21 +112,21 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
 
       {page.related.length > 0 ? (
         <Section title="Related judgments">
-          <p className="mb-3 text-xs text-slate-500">
+          <p className="mb-3 text-xs text-muted">
             Judgments that discuss other provisions of this Act and are closest in meaning to this one. They do not refer
             to this provision.
           </p>
           <ol className="space-y-3">
             {page.related.map((r) => (
-              <li key={`${r.judgment.id}-${r.label}`} className="rounded-lg border border-slate-200 bg-white p-4">
-                <Link href={`/judgments/${r.judgment.id}`} className="font-semibold text-indigo-700 hover:underline">
+              <li key={`${r.judgment.id}-${r.label}`} className="rounded-lg border border-rule bg-surface p-4">
+                <Link href={`/judgments/${r.judgment.id}`} className="font-semibold text-accent hover:underline">
                   {r.judgment.title}
                 </Link>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted">
                   {[r.judgment.citation, formatDate(r.judgment.decision_date)].filter(Boolean).join(" · ")}
                 </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  <Link href={`/judgments/${r.judgment.id}#p-${r.label}`} className="mr-1 font-medium text-indigo-700 hover:underline">
+                <p className="mt-2 text-sm text-ink-soft">
+                  <Link href={`/judgments/${r.judgment.id}#p-${r.label}`} className="mr-1 font-medium text-accent hover:underline">
                     ¶{r.label}
                   </Link>
                   {excerpt(r.text)}
