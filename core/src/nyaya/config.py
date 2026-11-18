@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_daily_cap: int = 500
     llm_timeout_seconds: float = 60.0
-    llm_context_tokens: int = 8000
+    # Paragraph budget for a breakdown (estimated at 4 characters per token). The provider rejects requests
+    # above its per-request limit, so this leaves room for the instructions and the answer.
+    llm_context_tokens: int = 3500
 
     # Models
     embedding_model: str = "BAAI/bge-m3"
