@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, useId, useState } from "react";
+import { type KeyboardEvent, useId, useRef, useState } from "react";
 
 export interface Option {
   value: string;
@@ -44,6 +44,7 @@ interface ComboboxProps {
  */
 export default function Combobox({ id, label, value, onChange, options, placeholder, emptyText, freeText, multi }: ComboboxProps) {
   const listId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState<string | null>(null); // null: not editing, show the chosen value
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -104,6 +105,17 @@ export default function Combobox({ id, label, value, onChange, options, placehol
   }
 
   const showList = open && (shown.length > 0 || Boolean(emptyText));
+
+  /** The arrow button opens and closes the list without losing what the user typed. */
+  function toggleList() {
+    if (open) {
+      setQuery(null);
+      setOpen(false);
+    } else {
+      inputRef.current?.focus();
+      setOpen(true);
+    }
+  }
   const activeId = showList && shown[active] ? `${listId}-${active}` : undefined;
 
   return (
@@ -111,7 +123,9 @@ export default function Combobox({ id, label, value, onChange, options, placehol
       <label htmlFor={id} className="flex min-h-8 items-end text-xs font-medium leading-4 text-ink-soft">
         {label}
       </label>
+      <div className="relative">
       <input
+        ref={inputRef}
         id={id}
         type="text"
         role="combobox"
@@ -135,14 +149,27 @@ export default function Combobox({ id, label, value, onChange, options, placehol
           setActive(0);
         }}
         onKeyDown={onKeyDown}
-        className="mt-1.5 block h-9 w-full min-w-0 rounded border border-rule bg-white px-2.5 text-sm text-ink placeholder:text-muted/70"
+        className="mt-1.5 block h-9 w-full min-w-0 rounded border border-rule bg-white py-0 pl-2.5 pr-9 text-sm text-ink placeholder:text-muted/70"
       />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={open ? `Close ${label}` : `Open ${label}`}
+        onMouseDown={(e) => e.preventDefault()} // keep focus in the input
+        onClick={toggleList}
+        className="absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r text-muted hover:text-ink"
+      >
+        <svg viewBox="0 0 20 20" className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+          <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      </div>
       {showList ? (
         <ul
           id={listId}
           role="listbox"
           onMouseDown={(e) => e.preventDefault()} // keep focus in the input so the pick registers before blur
-          className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-rule bg-surface py-1 text-sm shadow-sm"
+          className="absolute left-0 z-20 mt-1 max-h-72 w-max min-w-full max-w-[min(28rem,90vw)] overflow-auto rounded-md border border-rule bg-surface py-1 text-sm shadow-sm"
         >
           {shown.length === 0 ? (
             <li className="px-3 py-2 text-xs text-muted">{emptyText}</li>
@@ -155,11 +182,11 @@ export default function Combobox({ id, label, value, onChange, options, placehol
                 aria-selected={index === active}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => choose(option)}
-                className={`flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1.5 ${
+                className={`flex cursor-pointer items-baseline justify-between gap-4 px-3 py-1.5 ${
                   index === active ? "bg-accent-soft text-ink" : "text-ink-soft"
                 }`}
               >
-                <span className="min-w-0 truncate">{option.label}</span>
+                <span className="min-w-0 break-words">{option.label}</span>
                 {option.hint ? <span className="shrink-0 text-xs tabular-nums text-muted">{option.hint}</span> : null}
               </li>
             ))

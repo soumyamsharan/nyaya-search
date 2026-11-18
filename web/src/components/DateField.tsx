@@ -1,9 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+// Newest first, back to 1950: judgments and the dates users search for span decades.
+const YEARS = Array.from({ length: new Date().getFullYear() + 1 - 1950 }, (_, i) => new Date().getFullYear() + 1 - i);
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const toIso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -30,6 +33,7 @@ interface DateFieldProps {
 /** A date box you can type into, with a calendar that opens from the button. Dates are sent as yyyy-mm-dd. */
 export default function DateField({ id, label, value, onChange }: DateFieldProps) {
   const popoverId = useId();
+  const root = useRef<HTMLDivElement>(null);
   const today = new Date();
   const selected = value ? value.split("-").map(Number) : null;
   const [open, setOpen] = useState(false);
@@ -39,10 +43,24 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
     month: (selected?.[1] ?? today.getMonth() + 1) - 1,
   }));
 
+  // Close the calendar on any click outside this field.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    return () => document.removeEventListener("mousedown", onPointer);
+  }, [open]);
+
   function pick(iso: string) {
     onChange(iso);
     setText(null);
     setOpen(false);
+  }
+
+  function jump(next: { year?: number; month?: number }) {
+    setView((v) => ({ year: next.year ?? v.year, month: next.month ?? v.month }));
   }
 
   function shift(months: number) {
@@ -58,7 +76,7 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
   const cells: (number | null)[] = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
   return (
-    <div className="relative" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}>
+    <div ref={root} className="relative">
       <label htmlFor={id} className="flex min-h-8 items-end text-xs font-medium leading-4 text-ink-soft">
         {label}
       </label>
@@ -107,14 +125,35 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
 
       {open ? (
         <div id={popoverId} className="absolute z-20 mt-1 w-64 rounded-md border border-rule bg-surface p-3 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <button type="button" onClick={() => shift(-1)} className="size-7 rounded text-ink-soft hover:bg-accent-soft" aria-label="Previous month">
+          <div className="mb-2 flex items-center gap-1.5">
+            <button type="button" onClick={() => shift(-1)} className="size-7 shrink-0 rounded text-ink-soft hover:bg-accent-soft" aria-label="Previous month">
               ‹
             </button>
-            <span className="font-serif text-base text-ink">
-              {MONTHS[view.month]} {view.year}
-            </span>
-            <button type="button" onClick={() => shift(1)} className="size-7 rounded text-ink-soft hover:bg-accent-soft" aria-label="Next month">
+            <select
+              aria-label="Month"
+              value={view.month}
+              onChange={(e) => jump({ month: Number(e.target.value) })}
+              className="h-7 min-w-0 flex-1 rounded border border-rule bg-white px-1 text-sm text-ink"
+            >
+              {MONTHS.map((name, i) => (
+                <option key={name} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Year"
+              value={view.year}
+              onChange={(e) => jump({ year: Number(e.target.value) })}
+              className="h-7 w-20 shrink-0 rounded border border-rule bg-white px-1 text-sm text-ink"
+            >
+              {YEARS.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <button type="button" onClick={() => shift(1)} className="size-7 shrink-0 rounded text-ink-soft hover:bg-accent-soft" aria-label="Next month">
               ›
             </button>
           </div>
