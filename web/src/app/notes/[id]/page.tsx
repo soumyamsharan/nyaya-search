@@ -1,3 +1,4 @@
+import { ListSkeleton } from "@/components/ui";
 import { Suspense } from "react";
 import SharedNoteView from "@/components/SharedNoteView";
 
@@ -8,7 +9,7 @@ async function NoteFromParams({ params }: { params: Promise<{ id: string }> }) {
 
 export default function NotePage(props: PageProps<"/notes/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading note…</p>}>
+    <Suspense fallback={<ListSkeleton label="Loading note" />}>
       <NoteFromParams params={props.params} />
     </Suspense>
   );

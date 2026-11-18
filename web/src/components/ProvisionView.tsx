@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { Provision, ProvisionKind } from "@/lib/types";
-import { Notice, Section, StatusMessage, formatDate } from "./ui";
+import { ListSkeleton, Notice, Section, StatusMessage, formatDate } from "./ui";
 
 const KIND_LABEL: Record<ProvisionKind, string> = {
   section: "Section",
@@ -36,7 +36,7 @@ export function ProvisionView({ kind, statuteKey, slug }: { kind: ProvisionKind;
   }, [kind, statuteKey, slug]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!page) return <p className="text-sm text-muted">Loading provision…</p>;
+  if (!page) return <ListSkeleton label="Loading provision" />;
 
   const title = `${KIND_LABEL[page.kind]} ${page.number}, ${page.name}`;
   const actHref = page.kind === "article" ? null : `/statutes/${page.key}`;

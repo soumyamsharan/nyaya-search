@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Spinner } from "./ui";
 import { ApiError, api } from "@/lib/api";
 import { type NoteItem, loadNotes } from "@/lib/notes";
 import { type SharedLink, loadSharedLinks, saveSharedLinks, shareUrl } from "@/lib/shared-notes";
@@ -100,7 +101,14 @@ export default function ShareNote({ onClose }: { onClose: () => void }) {
               disabled={busy}
               className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
             >
-              {busy ? "Creating…" : "I understand, create the link"}
+              {busy ? (
+                <>
+                  <Spinner className="mr-1.5" />
+                  Creating…
+                </>
+              ) : (
+                "I understand, create the link"
+              )}
             </button>
             <button onClick={() => setConfirming(false)} className="text-xs text-muted hover:underline">
               Cancel

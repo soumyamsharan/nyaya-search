@@ -8,7 +8,7 @@ import { ROLES, type Role, parseRoles, roleInfo } from "@/lib/roles";
 import { addNote, citedParagraph } from "@/lib/notes";
 import type { CitationGraph, CitationRef, Judgment, Paragraph, StatuteRef } from "@/lib/types";
 import { BreakdownPanel, CitationsPanel, QuestionPanel } from "./JudgmentPanels";
-import { Notice, Section, StatusMessage, formatDate } from "./ui";
+import { JudgmentSkeleton, Notice, Section, StatusMessage, formatDate } from "./ui";
 
 const PARA_REF = /\[Paras?\.?\s*([^\]]+)\]/gi;
 
@@ -294,7 +294,7 @@ export default function JudgmentView({ id }: { id: string }) {
   }, [judgment]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!judgment) return <p className="text-sm text-muted">Loading judgment…</p>;
+  if (!judgment) return <JudgmentSkeleton />;
 
   const seqByLabel = new Map(judgment.paragraphs.map((p) => [p.label, p.seq]));
   return (

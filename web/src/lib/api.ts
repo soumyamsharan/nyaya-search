@@ -16,6 +16,8 @@ import type {
   ProvisionKind,
 } from "./types";
 
+import { HOUR, MINUTE, cached, prefetch } from "./cache";
+
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 export type ApiErrorKind = "unreachable" | "busy" | "unavailable" | "not_found" | "invalid" | "rate_limited" | "error";
@@ -67,12 +69,20 @@ function searchParams(q: string, filters: SearchFilters): URLSearchParams {
   return params;
 }
 
+/** Read-only GET, kept in the session cache for `ttl` ms. Notes and questions are never cached. */
+function get<T>(path: string, ttl: number): Promise<T> {
+  return cached(path, ttl, () => request<T>(path));
+}
+
+const judgmentPath = (id: string) => `/v1/judgments/${enc(id)}`;
+const citationsPath = (id: string) => `/v1/judgments/${enc(id)}/citations`;
+
 export const api = {
   search(q: string, filters: SearchFilters): Promise<SearchResponse> {
-    return request(`/v1/search?${searchParams(q, filters)}`);
+    return get(`/v1/search?${searchParams(q, filters)}`, 10 * MINUTE);
   },
-  judges: () => request<{ judges: JudgeCount[] }>("/v1/judges").then((r) => r.judges),
-  statutes: () => request<StatuteIndex>("/v1/statutes"),
+  judges: () => get<{ judges: JudgeCount[] }>("/v1/judges", HOUR).then((r) => r.judges),
+  statutes: () => get<StatuteIndex>("/v1/statutes", 30 * MINUTE),
   createNote: (items: { judgment_id: string; label: string }[]) =>
     request<NoteCreated>("/v1/notes", { method: "POST", body: JSON.stringify({ items }) }),
   getNote: (id: string) => request<SharedNote>(`/v1/notes/${enc(id)}`),
@@ -80,14 +90,19 @@ export const api = {
     request<NoteRenewed>(`/v1/notes/${enc(id)}/renewal`, { method: "POST", headers: { "X-Note-Token": token } }),
   revokeNote: (id: string, token: string) =>
     request<void>(`/v1/notes/${enc(id)}`, { method: "DELETE", headers: { "X-Note-Token": token } }),
-  statuteAct: (key: string, page: number) => request<StatuteActPage>(`/v1/statutes/${enc(key)}?page=${page}`),
+  statuteAct: (key: string, page: number) => get<StatuteActPage>(`/v1/statutes/${enc(key)}?page=${page}`, 30 * MINUTE),
   statuteSection: (key: string, section: string) =>
-    request<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`),
+    get<StatuteSectionPage>(`/v1/statutes/${enc(key)}/sections/${enc(section)}`, 30 * MINUTE),
   provision: (kind: ProvisionKind, key: string, slug: string) =>
-    request<Provision>(`/v1/provisions/${kind}/${enc(key)}/${enc(slug)}`),
-  judgment: (id: string) => request<Judgment>(`/v1/judgments/${enc(id)}`),
-  breakdown: (id: string) => request<Breakdown>(`/v1/judgments/${enc(id)}/breakdown`),
-  citations: (id: string) => request<CitationGraph>(`/v1/judgments/${enc(id)}/citations`),
+    get<Provision>(`/v1/provisions/${kind}/${enc(key)}/${enc(slug)}`, 30 * MINUTE),
+  judgment: (id: string) => get<Judgment>(judgmentPath(id), HOUR),
+  breakdown: (id: string) => get<Breakdown>(`/v1/judgments/${enc(id)}/breakdown`, HOUR),
+  citations: (id: string) => get<CitationGraph>(citationsPath(id), HOUR),
+  /** Warm the cache for a judgment the user is about to open. */
+  prefetchJudgment(id: string): void {
+    prefetch(judgmentPath(id), HOUR, () => request<Judgment>(judgmentPath(id)));
+    prefetch(citationsPath(id), HOUR, () => request<CitationGraph>(citationsPath(id)));
+  },
   ask: (id: string, question: string) =>
     request<Answer>(`/v1/judgments/${enc(id)}/questions`, { method: "POST", body: JSON.stringify({ question }) }),
 };

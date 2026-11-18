@@ -1,3 +1,4 @@
+import { ListSkeleton } from "@/components/ui";
 import { Suspense } from "react";
 import { StatuteActView } from "@/components/StatutePages";
 
@@ -16,7 +17,7 @@ async function ActFromParams({
 
 export default function StatuteActPage(props: PageProps<"/statutes/[key]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading Act…</p>}>
+    <Suspense fallback={<ListSkeleton label="Loading Act" />}>
       <ActFromParams params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );

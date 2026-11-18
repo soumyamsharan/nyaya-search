@@ -1,3 +1,4 @@
+import { ListSkeleton } from "@/components/ui";
 import { Suspense } from "react";
 import { StatuteSectionView } from "@/components/StatutePages";
 
@@ -8,7 +9,7 @@ async function SectionFromParams({ params }: { params: Promise<{ key: string; se
 
 export default function StatuteSectionPage(props: PageProps<"/statutes/[key]/sections/[section]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading section…</p>}>
+    <Suspense fallback={<ListSkeleton label="Loading section" />}>
       <SectionFromParams params={props.params} />
     </Suspense>
   );

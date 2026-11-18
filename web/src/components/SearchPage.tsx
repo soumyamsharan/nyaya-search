@@ -6,7 +6,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { MATCH_IN } from "@/lib/roles";
 import type { SearchFilters, SearchResponse } from "@/lib/types";
-import { Notice, StatusMessage, formatDate } from "./ui";
+import { Notice, ResultSkeleton, Spinner, StatusMessage, formatDate } from "./ui";
 
 type Field =
   | { key: keyof SearchFilters; label: string; type: "text" | "date"; placeholder?: string; judgeList?: boolean }
@@ -165,7 +165,14 @@ export default function SearchPage() {
           </datalist>
         </details>
         <button type="submit" disabled={loading} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          {loading ? "Searching…" : "Search"}
+          {loading ? (
+            <>
+              <Spinner className="mr-1.5" />
+              Searching…
+            </>
+          ) : (
+            "Search"
+          )}
         </button>
       </form>
 
@@ -182,12 +189,18 @@ export default function SearchPage() {
       {error ? <StatusMessage error={error} /> : null}
       {response?.message && !error ? <Notice>{response.message}</Notice> : null}
 
+      {loading && !response ? <ResultSkeleton /> : null}
       <ol className="divide-y divide-rule border-y border-rule">
         {response?.results.map(({ judgment, matched_paragraph: p }, index) => (
           <li key={judgment.id} className="flex gap-4 py-6">
             <span className="w-6 shrink-0 pt-1 font-serif text-sm tabular-nums text-muted">{index + 1}</span>
             <div className="min-w-0 flex-1">
-              <Link href={`/judgments/${judgment.id}`} className="font-serif text-xl leading-snug text-ink hover:text-accent">
+              <Link
+                href={`/judgments/${judgment.id}`}
+                onMouseEnter={() => api.prefetchJudgment(judgment.id)}
+                onFocus={() => api.prefetchJudgment(judgment.id)}
+                className="font-serif text-xl leading-snug text-ink hover:text-accent"
+              >
                 {judgment.title}
               </Link>
               <p className="mt-1 text-xs text-muted">

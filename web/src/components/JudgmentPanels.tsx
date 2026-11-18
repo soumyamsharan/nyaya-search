@@ -4,7 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { api } from "@/lib/api";
 import type { Answer, Breakdown, CitationGraph } from "@/lib/types";
-import { CitedSentences, MachineGenerated, Notice, ParagraphLink, Section, StatusMessage } from "./ui";
+import { CitedSentences, MachineGenerated, Notice, ParagraphLink, Section, Spinner, StatusMessage } from "./ui";
 
 const BREAKDOWN_SECTIONS: { key: keyof Pick<Breakdown, "facts" | "issues" | "held" | "ratio">; title: string }[] = [
   { key: "facts", title: "Facts" },
@@ -35,7 +35,14 @@ export function BreakdownPanel({ judgmentId }: { judgmentId: string }) {
     <Section title="Breakdown">
       {!breakdown && !error ? (
         <button onClick={load} disabled={loading} className="rounded-md border border-accent-soft px-3 py-1.5 text-sm text-accent disabled:opacity-50">
-          {loading ? "Preparing breakdown… (first time can take a while)" : "Show facts, issues, held and ratio"}
+          {loading ? (
+            <>
+              <Spinner className="mr-1.5" />
+              Preparing breakdown… (first time can take a while)
+            </>
+          ) : (
+            "Show facts, issues, held and ratio"
+          )}
         </button>
       ) : null}
       {error ? <StatusMessage error={error} /> : null}
@@ -92,7 +99,14 @@ export function QuestionPanel({ judgmentId }: { judgmentId: string }) {
           Your question is processed by an external AI model provider and is not stored by Nyaya Search.
         </p>
         <button type="submit" disabled={loading || !question.trim()} className="rounded-md bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-50">
-          {loading ? "Answering…" : "Ask"}
+          {loading ? (
+            <>
+              <Spinner className="mr-1.5" />
+              Answering…
+            </>
+          ) : (
+            "Ask"
+          )}
         </button>
       </form>
       <div className="mt-3 space-y-2">

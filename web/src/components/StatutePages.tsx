@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { StatuteActPage, StatuteIndex, StatuteSectionPage } from "@/lib/types";
-import { Notice, Section, StatusMessage, formatDate } from "./ui";
+import { ListSkeleton, Notice, Section, StatusMessage, formatDate } from "./ui";
 
 export function StatuteIndexView() {
   const [index, setIndex] = useState<StatuteIndex | null>(null);
@@ -16,7 +16,7 @@ export function StatuteIndexView() {
   }, []);
 
   if (error) return <StatusMessage error={error} />;
-  if (!index) return <p className="text-sm text-muted">Loading statutes…</p>;
+  if (!index) return <ListSkeleton label="Loading statutes" rows={8} />;
   const term = query.trim().toLowerCase();
   const acts = index.acts.filter((a) => !term || a.name.toLowerCase().includes(term));
   return (
@@ -68,7 +68,7 @@ export function StatuteSectionView({ statuteKey, section }: { statuteKey: string
   }, [statuteKey, section]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!page) return <p className="text-sm text-muted">Loading section…</p>;
+  if (!page) return <ListSkeleton label="Loading section" />;
   return (
     <div className="space-y-4">
       <p className="text-sm">
@@ -125,7 +125,7 @@ export function StatuteActView({ statuteKey, pageNumber }: { statuteKey: string;
   }, [statuteKey, pageNumber]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!data) return <p className="text-sm text-muted">Loading Act…</p>;
+  if (!data) return <ListSkeleton label="Loading Act" />;
   const pages = Math.ceil(data.judgments_total / data.per_page);
   return (
     <div className="space-y-4">

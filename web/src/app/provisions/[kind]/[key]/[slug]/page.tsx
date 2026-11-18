@@ -1,3 +1,4 @@
+import { ListSkeleton } from "@/components/ui";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ProvisionView } from "@/components/ProvisionView";
@@ -15,7 +16,7 @@ async function ProvisionFromParams({ params }: { params: Promise<{ kind: string;
 
 export default function ProvisionPage(props: PageProps<"/provisions/[kind]/[key]/[slug]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading provision…</p>}>
+    <Suspense fallback={<ListSkeleton label="Loading provision" />}>
       <ProvisionFromParams params={props.params} />
     </Suspense>
   );

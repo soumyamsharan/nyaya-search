@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import SearchPage from "@/components/SearchPage";
+import { ResultSkeleton } from "@/components/ui";
 
 export default function Home() {
   return (
@@ -8,7 +9,7 @@ export default function Home() {
         Search Supreme Court of India judgments (2024 onwards) by describing your case. Every result shows the
         paragraph that matched.
       </p>
-      <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+      <Suspense fallback={<ResultSkeleton />}>
         <SearchPage />
       </Suspense>
     </div>

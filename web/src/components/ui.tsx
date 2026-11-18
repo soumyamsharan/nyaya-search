@@ -78,3 +78,69 @@ export function formatDate(value: string | null): string {
   if (!value) return "";
   return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/** A small spinner for buttons that are waiting on a request. Hidden from screen readers; the button label says it. */
+export function Spinner({ className = "" }: { className?: string }) {
+  return (
+    <svg className={`inline-block size-3.5 animate-spin ${className}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A grey placeholder bar that pulses while content loads. */
+export function Bar({ width = "100%", height = "0.75rem" }: { width?: string; height?: string }) {
+  return <div className="animate-pulse rounded bg-rule/70" style={{ width, height }} />;
+}
+
+/** Placeholder rows shaped like search results, shown while a search runs. */
+export function ResultSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div role="status" aria-label="Loading results" className="divide-y divide-rule border-y border-rule">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex gap-4 py-6">
+          <div className="w-6 shrink-0" />
+          <div className="flex-1 space-y-3">
+            <Bar width="70%" height="1.25rem" />
+            <Bar width="45%" />
+            <Bar width="100%" height="4.5rem" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Placeholder shaped like a judgment page: title, metadata and a few paragraphs. */
+export function JudgmentSkeleton() {
+  return (
+    <div role="status" aria-label="Loading judgment" className="space-y-6">
+      <div className="space-y-3">
+        <Bar width="80%" height="1.75rem" />
+        <Bar width="55%" />
+        <Bar width="35%" />
+      </div>
+      <div className="space-y-5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-2.5">
+            <Bar width="100%" />
+            <Bar width="92%" />
+            <Bar width="60%" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Placeholder lines for a list page (statutes, Acts, provisions). */
+export function ListSkeleton({ label, rows = 6 }: { label: string; rows?: number }) {
+  return (
+    <div role="status" aria-label={label} className="space-y-4">
+      {Array.from({ length: rows }, (_, i) => (
+        <Bar key={i} width={`${65 + ((i * 17) % 30)}%`} height="1rem" />
+      ))}
+    </div>
+  );
+}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { SharedNote } from "@/lib/types";
-import { Notice, Section, StatusMessage, formatDate } from "./ui";
+import { ListSkeleton, Notice, Section, StatusMessage, formatDate } from "./ui";
 
 export default function SharedNoteView({ id }: { id: string }) {
   const [note, setNote] = useState<SharedNote | null>(null);
@@ -15,7 +15,7 @@ export default function SharedNoteView({ id }: { id: string }) {
   }, [id]);
 
   if (error) return <StatusMessage error={error} />;
-  if (!note) return <p className="text-sm text-muted">Loading note…</p>;
+  if (!note) return <ListSkeleton label="Loading note" rows={4} />;
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Shared research note</h1>
